@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('NestOpenMining', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
@@ -35,13 +35,19 @@ describe('HedgeOptions', function() {
 
         await usdt.transfer(owner.address, 10000000000000n);
         await hbtc.transfer(owner.address, 10000000000000000000000000n);
-        //await nest.transfer(nestOpenMining.address, 5000000000000000000000000000n);
+        await usdt.connect(addr1).transfer(addr1.address, 10000000000000n);
+        await hbtc.connect(addr1).transfer(addr1.address, 10000000000000000000000000n);
+        await nest.transfer(addr1.address, 1000000000000000000000000000n);
         console.log(await getStatus());
 
         await nest.approve(nestOpenMining.address, 10000000000000000000000000000n);
         await usdt.approve(nestOpenMining.address, 10000000000000000000000000n);
         await hbtc.approve(nestOpenMining.address, 10000000000000000000000000n);
+        await nest.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000000n);
+        await usdt.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000n);
+        await hbtc.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000n);
         await nestOpenMining.increase(0, 5000000000000000000000000000n);
+        console.log(await getStatus());
 
         if (true) {
             console.log('1. 报价');
@@ -81,7 +87,7 @@ describe('HedgeOptions', function() {
             console.log(await getStatus());
         }
 
-        if (true) {
+        if (false) {
             console.log('3. withdraw');
             await nestOpenMining.withdraw(usdt.address, await nestOpenMining.balanceOf(usdt.address, owner.address));
             await nestOpenMining.withdraw(hbtc.address, await nestOpenMining.balanceOf(hbtc.address, owner.address));
@@ -90,7 +96,7 @@ describe('HedgeOptions', function() {
             console.log(await getStatus());
         }
 
-        if (false) {
+        if (true) {
             console.log('3. 报价');
 
             let receipt = await nestOpenMining.post(0, 1, 62000000000n, {
@@ -116,6 +122,13 @@ describe('HedgeOptions', function() {
                     price: sheet.price.toString()
                 });
             }
+        }
+
+        if (true) {
+            console.log('4. 吃单');
+            let receipt = await nestOpenMining.connect(addr1).takeToken1(0, 1, 1, 63000000000n);
+            await showReceipt(receipt);
+            console.log(await getStatus());
         }
     });
 });

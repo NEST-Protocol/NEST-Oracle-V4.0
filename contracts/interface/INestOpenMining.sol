@@ -13,6 +13,13 @@ interface INestOpenMining {
     /// @param reward 挖矿代币地址。0表示不挖矿
     event Open(uint channelId, address token0, uint unit, address token1, address reward);
 
+    /// @dev Post event
+    /// @param channelId 报价通道编号
+    /// @param miner Address of miner
+    /// @param index Index of the price sheet
+    /// @param scale 报价规模
+    event Post(uint channelId, address miner, uint index, uint scale, uint price);
+
     /* ========== Structures ========== */
     
     /// @dev Nest mining configuration structure
@@ -111,33 +118,44 @@ interface INestOpenMining {
     /// @param equivalent 与单位token0等价的token1数量
     function post(uint channelId, uint scale, uint equivalent) external payable;
 
-    /// @notice Close a price sheet of (ETH, USDx) | (ETH, NEST) | (ETH, TOKEN) | (ETH, NTOKEN)
-    /// @dev Here we allow an empty price sheet (still in VERIFICATION-PERIOD) to be closed
+    /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
+    /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
     /// @param channelId 报价通道编号
-    /// @param index The index of the price sheet w.r.t. `token`
-    function close(uint channelId, uint index) external;
-    
+    /// @param index The position of the sheet in priceSheetList[token]
+    /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
+    /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
+    function takeToken0(uint channelId, uint index, uint takeNum, uint newEquivalent) external payable;
+
+    /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
+    /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
+    /// @param channelId The address of token(ntoken)
+    /// @param index The position of the sheet in priceSheetList[token]
+    /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
+    /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
+    function takeToken1(uint channelId, uint index, uint takeNum, uint newEquivalent) external payable;
+
     /// @dev List sheets by page
     /// @param channelId 报价通道编号
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return List of price sheets
-    function list(
-        uint channelId, 
-        uint offset, 
-        uint count, 
-        uint order
-    ) external view returns (PriceSheetView[] memory);
+    function list(uint channelId, uint offset, uint count, uint order) external view returns (PriceSheetView[] memory);
 
-    /// @dev Withdraw assets
-    /// @param tokenAddress Destination token address
-    /// @param value The value to withdraw
-    function withdraw(address tokenAddress, uint value) external;
-    
+    /// @notice Close a price sheet of (ETH, USDx) | (ETH, NEST) | (ETH, TOKEN) | (ETH, NTOKEN)
+    /// @dev Here we allow an empty price sheet (still in VERIFICATION-PERIOD) to be closed
+    /// @param channelId 报价通道编号
+    /// @param index The index of the price sheet w.r.t. `token`
+    function close(uint channelId, uint index) external;
+        
     /// @dev View the number of assets specified by the user
     /// @param tokenAddress Destination token address
     /// @param addr Destination address
     /// @return Number of assets
     function balanceOf(address tokenAddress, address addr) external view returns (uint);
+
+    /// @dev Withdraw assets
+    /// @param tokenAddress Destination token address
+    /// @param value The value to withdraw
+    function withdraw(address tokenAddress, uint value) external;
 }
