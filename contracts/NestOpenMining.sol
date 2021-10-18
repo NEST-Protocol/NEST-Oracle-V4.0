@@ -265,17 +265,15 @@ contract NestOpenMining is NestBase, INestOpenMining {
         // lost when the assets are returned, It should be frozen according to decodeFloat(fraction, exponent) * ethNum
         // However, considering that the loss is less than 1 / 10 ^ 14, the loss here is ignored, and the part of
         // precision loss can be transferred out as system income in the future
-        uint fee = msg.value;
-        {
-            mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
+        mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
 
-            // 冻结token0
-            fee = _freeze(balances, channel.token0, uint(channel.unit) * scale, fee);
-            // 冻结token1
-            fee = _freeze(balances, channel.token1, scale * equivalent, fee);
-            // 冻结nest
-            fee = _freeze(balances, NEST_TOKEN_ADDRESS, uint(config.pledgeNest) * 1000 ether, fee);
-        }
+        uint fee = msg.value;
+        // 冻结token0
+        fee = _freeze(balances, channel.token0, uint(channel.unit) * scale, fee);
+        // 冻结token1
+        fee = _freeze(balances, channel.token1, scale * equivalent, fee);
+        // 冻结nest
+        fee = _freeze(balances, NEST_TOKEN_ADDRESS, uint(config.pledgeNest) * 1000 ether, fee);
     
         // 5. Deposit fee
         // The revenue is deposited every 256 sheets, deducting the times of taking orders and the settled part
@@ -431,16 +429,16 @@ contract NestOpenMining is NestBase, INestOpenMining {
         {
             // 冻结资产：token0, token1, nest
             mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
-            uint fee = msg.value;
 
+            uint fee = msg.value;
             // 冻结token0
-            fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * (channel.unit), fee);
+            fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
             // 冻结token1
             uint backTokenValue = _decodeFloat(sheet.priceFloat) * takeNum;
             if (needEthNum * newEquivalent > backTokenValue) {
-                fee = _freeze(balances, channel.token0, needEthNum * newEquivalent - backTokenValue, fee);
+                fee = _freeze(balances, channel.token1, needEthNum * newEquivalent - backTokenValue, fee);
             } else {
-                _unfreeze(balances, channel.token0, backTokenValue - needEthNum * newEquivalent, msg.sender);
+                _unfreeze(balances, channel.token1, backTokenValue - needEthNum * newEquivalent, msg.sender);
             }
             fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
             require(fee == 0, "NOM:!fee");
@@ -624,7 +622,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
         uint32 ethNum,
         uint nestNum1k,
         uint level_shares,
-        uint tokenAmountPerEth
+        uint equivalent
     ) private {
 
         sheets.push(PriceSheet(
@@ -636,7 +634,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
             uint24(nestNum1k),                          // uint32 nestNum1k;
             uint8(level_shares >> 8),                   // uint8 level;
             uint8(level_shares & 0xFF),
-            _encodeFloat(tokenAmountPerEth)
+            _encodeFloat(equivalent)
         ));
     }
 
