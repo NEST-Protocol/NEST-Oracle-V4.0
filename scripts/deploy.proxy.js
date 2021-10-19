@@ -19,7 +19,7 @@ exports.deploy = async function() {
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestLedger = await ethers.getContractFactory('NestLedger');
     const NestMining = await ethers.getContractFactory('NestMining');
-    const NestOpenMining = await ethers.getContractFactory('NestOpenMining');
+    const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const NestVote = await ethers.getContractFactory('NestVote');
     const NTokenController = await ethers.getContractFactory('NTokenController');
@@ -49,9 +49,9 @@ exports.deploy = async function() {
     //const nestLedger = await NestLedger.attach('0x0000000000000000000000000000000000000000');
     console.log('nestLedger: ' + nestLedger.address);
 
-    const nestMining = await upgrades.deployProxy(NestMining, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestMining = await NestMining.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestMining: ' + nestMining.address);
+    // const nestMining = await upgrades.deployProxy(NestMining, [nestGovernance.address], { initializer: 'initialize' });
+    // //const nestMining = await NestMining.attach('0x0000000000000000000000000000000000000000');
+    // console.log('nestMining: ' + nestMining.address);
 
     const nestOpenMining = await upgrades.deployProxy(NestOpenMining, [nestGovernance.address], { initializer: 'initialize' });
     //const nestOpenMining = await NestOpenMining.attach('0x0000000000000000000000000000000000000000');
@@ -82,19 +82,19 @@ exports.deploy = async function() {
         nest.address,
         '0x0000000000000000000000000000000000000000',
         nestLedger.address,
-        nestMining.address,
-        nestMining.address,
+        '0x0000000000000000000000000000000000000000', //nestMining.address,
+        '0x0000000000000000000000000000000000000000', //nestMining.address,
         nestPriceFacade.address,
         nestVote.address,
-        nestMining.address,
+        '0x0000000000000000000000000000000000000000', //nestMining.address,
         nnIncome.address,
         nTokenController.address
     );
 
     console.log('2. nestLedger.update()');
     await nestLedger.update(nestGovernance.address);
-    console.log('3. nestMining.update()');
-    await nestMining.update(nestGovernance.address);
+    //console.log('3. nestMining.update()');
+    //await nestMining.update(nestGovernance.address);
     console.log('4. nestOpenMining.update()');
     await nestOpenMining.update(nestGovernance.address);
     console.log('5. nestPriceFacade.update()');
@@ -153,7 +153,7 @@ exports.deploy = async function() {
 
         nestGovernance: nestGovernance,
         nestLedger: nestLedger,
-        nestMining: nestMining,
+        //nestMining: nestMining,
         nestOpenMining: nestOpenMining,
         nestPriceFacade: nestPriceFacade,
         nestVote: nestVote,

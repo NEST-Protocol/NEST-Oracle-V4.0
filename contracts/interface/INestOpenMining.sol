@@ -153,7 +153,7 @@ interface INestOpenMining {
     /// @dev 获取报价通道信息
     /// @param channelId 报价通道
     /// @return 报价通道信息
-    function getChannelInfo(uint channelId) external returns (PriceChannelView memory);
+    function getChannelInfo(uint channelId) external view returns (PriceChannelView memory);
 
     /// @dev 报价
     /// @param channelId 报价通道id
@@ -190,7 +190,18 @@ interface INestOpenMining {
     /// @param channelId 报价通道编号
     /// @param index The index of the price sheet w.r.t. `token`
     function close(uint channelId, uint index) external;
-        
+    
+    /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
+    /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
+    /// @param channelId 报价通道编号
+    /// @param indices A list of indices of sheets w.r.t. `token`
+    function closeList(uint channelId, uint[] memory indices) external;
+
+    /// @dev The function updates the statistics of price sheets
+    ///     It calculates from priceInfo to the newest that is effective.
+    /// @param channelId 报价通道编号
+    function stat(uint channelId) external;
+
     /// @dev View the number of assets specified by the user
     /// @param tokenAddress Destination token address
     /// @param addr Destination address
@@ -201,4 +212,26 @@ interface INestOpenMining {
     /// @param tokenAddress Destination token address
     /// @param value The value to withdraw
     function withdraw(address tokenAddress, uint value) external;
+
+    /// @dev Estimated mining amount
+    /// @param channelId 报价通道编号
+    /// @return Estimated mining amount
+    function estimate(uint channelId) external view returns (uint);
+
+    /// @dev Query the quantity of the target quotation
+    /// @param channelId 报价通道编号
+    /// @param index The index of the sheet
+    /// @return minedBlocks Mined block period from previous block
+    /// @return totalShares Total shares of sheets in the block
+    function getMinedBlocks(
+        uint channelId,
+        uint index
+    ) external view returns (uint minedBlocks, uint totalShares);
+
+    /// @dev Pay
+    /// @param channelId 报价通道编号
+    /// @param tokenAddress Token address of receiving funds (0 means ETH)
+    /// @param to Address to receive
+    /// @param value Amount to receive
+    function pay(uint channelId, address tokenAddress, address to, uint value) external;
 }
