@@ -236,7 +236,47 @@ contract NestOpenMining is NestBase, INestOpenMining {
         channel.vault += vault;
     }
 
-    //function getChannelInfo(uint channelId) external view returns ()
+    /// @dev 获取报价通道信息
+    /// @param channelId 报价通道
+    /// @return 报价通道信息
+    function getChannelInfo(uint channelId) external override returns (PriceChannelView memory) {
+        PriceChannel storage channel = _channels[channelId];
+        return PriceChannelView (
+            channelId,
+
+            channel.sheets.length,
+
+            // The information of mining fee
+            // Low 128-bits represent fee per post
+            // High 128-bits represent the current counter of no fee sheets (including settled)
+            channel.feeInfo,
+
+            // 计价代币地址, 0表示eth
+            channel.token0,
+            // 计价代币单位
+            channel.unit,
+
+            // 报价代币地址，0表示eth
+            channel.token1,
+            // 每个区块的标准出矿量
+            channel.rewardPerBlock,
+
+            // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
+            // 出矿代币地址
+            channel.reward,
+            // 矿币总量
+            channel.vault,
+
+            // 管理地址
+            channel.governance,
+            // Post fee(0.0001eth，DIMI_ETHER). 1000
+            channel.postFeeUnit,
+            // Single query fee (0.0001 ether, DIMI_ETHER). 100
+            channel.singleFee,
+            // Double query fee (0.0001 ether, DIMI_ETHER). 100
+            channel.doubleFee
+        );
+    }
 
     /* ========== Mining ========== */
 

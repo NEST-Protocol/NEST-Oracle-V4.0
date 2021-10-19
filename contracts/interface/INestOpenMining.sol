@@ -90,6 +90,44 @@ interface INestOpenMining {
         uint152 price;
     }
 
+    /// @dev Price channel view
+    struct PriceChannelView {
+        
+        uint channelId;
+
+        uint sheetCount;
+
+        // The information of mining fee
+        // Low 128-bits represent fee per post
+        // High 128-bits represent the current counter of no fee sheets (including settled)
+        uint feeInfo;
+
+        // 计价代币地址, 0表示eth
+        address token0;
+        // 计价代币单位
+        uint96 unit;
+
+        // 报价代币地址，0表示eth
+        address token1;
+        // 每个区块的标准出矿量
+        uint96 rewardPerBlock;
+
+        // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
+        // 出矿代币地址
+        address reward;
+        // 矿币总量
+        uint96 vault;
+
+        // 管理地址
+        address governance;
+        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        uint16 postFeeUnit;
+        // Single query fee (0.0001 ether, DIMI_ETHER). 100
+        uint16 singleFee;
+        // Double query fee (0.0001 ether, DIMI_ETHER). 100
+        uint16 doubleFee;
+    }
+
     /* ========== Configuration ========== */
 
     /// @dev Modify configuration
@@ -111,6 +149,11 @@ interface INestOpenMining {
     /// @param channelId 报价通道
     /// @param vault 注入矿币数量
     function increase(uint channelId, uint96 vault) external payable;
+
+    /// @dev 获取报价通道信息
+    /// @param channelId 报价通道
+    /// @return 报价通道信息
+    function getChannelInfo(uint channelId) external returns (PriceChannelView memory);
 
     /// @dev 报价
     /// @param channelId 报价通道id
