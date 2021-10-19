@@ -124,8 +124,8 @@ interface INestOpenMining {
         uint16 postFeeUnit;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         uint16 singleFee;
-        // Double query fee (0.0001 ether, DIMI_ETHER). 100
-        uint16 doubleFee;
+        // 创世区块
+        uint32 genesisBlock;
     }
 
     /* ========== Configuration ========== */

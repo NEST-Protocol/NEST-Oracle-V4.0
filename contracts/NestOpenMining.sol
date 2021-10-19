@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.6;
 
+import "./lib/IERC20.sol";
 import "./lib/TransferHelper.sol";
 import "./interface/INestOpenMining.sol";
 import "./interface/INestQuery.sol";
@@ -117,8 +118,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
         uint16 postFeeUnit;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         uint16 singleFee;
-        // Double query fee (0.0001 ether, DIMI_ETHER). 100
-        uint16 doubleFee;
+        // 创世区块
+        uint32 genesisBlock;
     }
 
     /// @dev Structure is used to represent a storage location. Storage variable can be used to avoid indexing 
@@ -219,7 +220,20 @@ contract NestOpenMining is NestBase, INestOpenMining {
         channel.rewardPerBlock = uint96(1);
         channel.reward = reward;
         channel.governance = msg.sender;
+        channel.genesisBlock = uint32(block.number);
         // TODO: 衰减参数
+
+        // if (token0 != address(0)) {
+        //     TransferHelper.safeTransferFrom(token0, msg.sender, address(this), 1);
+        //     require(IERC20(token0).balanceOf(address(this)) >= 1, "NOM:token0 error");
+        //     TransferHelper.safeTransfer(token0, msg.sender, 1);
+        // }
+        // if (token1 != address(0)) {
+        //     TransferHelper.safeTransferFrom(token1, msg.sender, address(this), 1);
+        //     require(IERC20(token1).balanceOf(address(this)) >= 1, "NOM:token1 error");
+        //     TransferHelper.safeTransfer(token1, msg.sender, 1);
+        // }
+        // TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, _nestLedgerAddress, 1000 ether);
     }
 
     /// @dev 向报价通道注入矿币
@@ -234,6 +248,15 @@ contract NestOpenMining is NestBase, INestOpenMining {
             TransferHelper.safeTransferFrom(reward, msg.sender, address(this), vault);
         }
         channel.vault += vault;
+    }
+
+    /// @dev 修改治理权限地址
+    /// @param channelId 报价通道
+    /// @param newGovernance 新治理权限地址
+    function changeGovernance(uint channelId, address newGovernance) external {
+        PriceChannel storage channel = _channels[channelId];
+        require(channel.governance == msg.sender, "NOM:not governance");
+        channel.governance = newGovernance;
     }
 
     /// @dev 获取报价通道信息
@@ -273,8 +296,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
             channel.postFeeUnit,
             // Single query fee (0.0001 ether, DIMI_ETHER). 100
             channel.singleFee,
-            // Double query fee (0.0001 ether, DIMI_ETHER). 100
-            channel.doubleFee
+            channel.genesisBlock
         );
     }
 
@@ -557,7 +579,13 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceSheet[] storage sheets = channel.sheets;
 
         // Call _close() method to close price sheet
-        (uint accountIndex, Tuple memory total) = _close(config, sheets, index, uint(channel.rewardPerBlock));
+        (uint accountIndex, Tuple memory total) = _close(
+            config, 
+            sheets, 
+            index, 
+            uint(channel.rewardPerBlock),
+            uint(channel.genesisBlock)
+        );
 
         if (accountIndex > 0) {
             mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
@@ -639,28 +667,17 @@ contract NestOpenMining is NestBase, INestOpenMining {
     /// @return Estimated mining amount
     function estimate(uint channelId) external view override returns (uint) {
 
-        PriceSheet[] storage sheets = _channels[channelId].sheets;
+        PriceChannel storage channel = _channels[channelId];
+        PriceSheet[] storage sheets = channel.sheets;
         uint index = sheets.length;
         while (index > 0) {
 
             PriceSheet memory sheet = sheets[--index];
             if (uint(sheet.shares) > 0) {
-
-                // Standard mining amount
-                uint standard = (block.number - uint(sheet.height)) * 1 ether;
-                // Genesis block number of ntoken
-                uint genesisBlock = NEST_GENESIS_BLOCK;
-                // TODO: 出矿逻辑
-                // // Not nest, the calculation methods of standard mining amount and genesis block number 
-                // // are different
-                // if (ntokenAddress != NEST_TOKEN_ADDRESS) {
-                //     // The standard mining amount of ntoken is 1/100 of nest
-                //     standard /= 100;
-                //     // Genesis block number of ntoken is obtained separately
-                //     (genesisBlock,) = INToken(ntokenAddress).checkBlockInfo();
-                // }
-
-                return standard * _reduction(block.number - genesisBlock);
+                return 
+                    (block.number - uint(sheet.height)) 
+                    * uint(channel.rewardPerBlock) 
+                    * _reduction(block.number - uint(channel.genesisBlock));
             }
         }
 
@@ -897,7 +914,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
         Config memory config,
         PriceSheet[] storage sheets,
         uint index,
-        uint rewardPerBlock
+        uint rewardPerBlock,
+        uint genesisBlock
     ) private returns (uint accountIndex, Tuple memory value) {
 
         PriceSheet memory sheet = sheets[index];
@@ -918,7 +936,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
                 value.ntokenValue = uint96(
                     mined
                     * tmp
-                    * _reduction(height - NEST_GENESIS_BLOCK)
+                    * _reduction(height - genesisBlock)
                     * rewardPerBlock
                     / totalShares / 400
                 );
@@ -951,7 +969,13 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
             // Because too many variables need to be returned, too many variables will be defined, 
             // so the structure of tuple is defined
-            (uint minerIndex, Tuple memory value) = _close(config, sheets, indices[--i], uint(channel.rewardPerBlock));
+            (uint minerIndex, Tuple memory value) = _close(
+                config, 
+                sheets, 
+                indices[--i], 
+                uint(channel.rewardPerBlock),
+                uint(channel.genesisBlock)
+            );
             // Batch closing quotation can only close sheet of the same user
             if (accountIndex == 0) {
                 // accountIndex == 0 means the first sheet, and the number of this sheet is taken
