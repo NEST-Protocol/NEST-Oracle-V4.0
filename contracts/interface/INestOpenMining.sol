@@ -90,6 +90,36 @@ interface INestOpenMining {
         uint152 price;
     }
 
+    // 报价通道配置
+    struct ChannelConfig {
+        // 计价代币地址, 0表示eth
+        address token0;
+        // 计价代币单位
+        uint96 unit;
+
+        // 报价代币地址，0表示eth
+        address token1;
+        // 每个区块的标准出矿量
+        uint96 rewardPerBlock;
+
+        // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
+        // 出矿代币地址
+        address reward;
+        // 矿币总量
+        //uint96 vault;
+
+        // 管理地址
+        //address governance;
+        // 创世区块
+        //uint32 genesisBlock;
+        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        uint16 postFeeUnit;
+        // Single query fee (0.0001 ether, DIMI_ETHER). 100
+        uint16 singleFee;
+        // 衰减系数，万分制。8000
+        uint16 reductionRate;
+    }
+
     /// @dev Price channel view
     struct PriceChannelView {
         
@@ -120,12 +150,14 @@ interface INestOpenMining {
 
         // 管理地址
         address governance;
+        // 创世区块
+        uint32 genesisBlock;
         // Post fee(0.0001eth，DIMI_ETHER). 1000
         uint16 postFeeUnit;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         uint16 singleFee;
-        // 创世区块
-        uint32 genesisBlock;
+        // 衰减系数，万分制。8000
+        uint16 reductionRate;
     }
 
     /* ========== Configuration ========== */
@@ -138,12 +170,16 @@ interface INestOpenMining {
     /// @return Configuration object
     function getConfig() external view returns (Config memory);
     
+    // /// @dev 开通报价通道
+    // /// @param token0 计价代币地址。0表示eth
+    // /// @param unit token0的单位
+    // /// @param token1 报价代币地址。0表示eth
+    // /// @param reward 挖矿代币地址。0表示挖eth
+    // function open(address token0, uint unit, address token1, address reward) external;
+
     /// @dev 开通报价通道
-    /// @param token0 计价代币地址。0表示eth
-    /// @param unit token0的单位
-    /// @param token1 报价代币地址。0表示eth
-    /// @param reward 挖矿代币地址。0表示挖eth
-    function open(address token0, uint unit, address token1, address reward) external;
+    /// @param config 报价通道配置
+    function open(ChannelConfig calldata config) external;
 
     /// @dev 向报价通道注入矿币
     /// @param channelId 报价通道

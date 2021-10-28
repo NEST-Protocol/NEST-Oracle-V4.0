@@ -46,6 +46,36 @@ describe('NestOpenMining', function() {
         await nest.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000000n);
         await usdt.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000n);
         await hbtc.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000n);
+
+        //await nestOpenMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
+        await nestOpenMining.open({
+            // 计价代币地址, 0表示eth
+            token0: hbtc.address,
+            // 计价代币单位
+            unit: 1000000000000000000n,
+    
+            // 报价代币地址，0表示eth
+            token1: usdt.address,
+            // 每个区块的标准出矿量
+            rewardPerBlock: 1000000000000000000n,
+    
+            // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
+            // 出矿代币地址
+            reward: nest.address,
+            // 矿币总量
+            //uint96 vault;
+    
+            // 管理地址
+            //address governance;
+            // 创世区块
+            //uint32 genesisBlock;
+            // Post fee(0.0001eth，DIMI_ETHER). 1000
+            postFeeUnit: 1000,
+            // Single query fee (0.0001 ether, DIMI_ETHER). 100
+            singleFee: 100,
+            // 衰减系数，万分制。8000
+            reductionRate: 8000
+        });
         await nestOpenMining.increase(0, 5000000000000000000000000000n);
         console.log(await getStatus());
 
@@ -69,7 +99,7 @@ describe('NestOpenMining', function() {
                     remainNum: sheet.remainNum,
                     ethNumBal: sheet.ethNumBal,
                     tokenNumBal: sheet.tokenNumBal,
-                    nsetNum1k: sheet.nestNum1k,
+                    nestNum1k: sheet.nestNum1k,
                     level: sheet.level,
                     shares: sheet.shares,
                     price: sheet.price.toString()

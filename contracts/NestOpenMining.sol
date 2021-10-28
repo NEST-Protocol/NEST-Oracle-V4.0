@@ -114,12 +114,14 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
         // 管理地址
         address governance;
+        // 创世区块
+        uint32 genesisBlock;
         // Post fee(0.0001eth，DIMI_ETHER). 1000
         uint16 postFeeUnit;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         uint16 singleFee;
-        // 创世区块
-        uint32 genesisBlock;
+        // 衰减系数，万分制。8000
+        uint16 reductionRate;
     }
 
     /// @dev Structure is used to represent a storage location. Storage variable can be used to avoid indexing 
@@ -148,11 +150,11 @@ contract NestOpenMining is NestBase, INestOpenMining {
     // Mapping from address to index of account. address=>accountIndex
     mapping(address=>uint) _accountMapping;
 
+    // 报价通道映射，通过此映射避免重复添加报价通道
+    mapping(uint=>uint) _channelMapping;
+
     // 报价通道
     PriceChannel[] _channels;
-
-    // INestLedger implementation contract address
-    address _nestLedgerAddress;
 
     // Unit of post fee. 0.0001 ether
     uint constant DIMI_ETHER = 0.0001 ether;
@@ -161,37 +163,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
     uint constant ETHEREUM_BLOCK_TIMESPAN = 14;
 
     /* ========== Governance ========== */
-
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call
-    ///      super.update(nestGovernanceAddress) when overriding, and override method without onlyGovernance
-    /// @param nestGovernanceAddress INestGovernance implementation contract address
-    function update(address nestGovernanceAddress) public override {
-        
-        super.update(nestGovernanceAddress);
-        (
-            //address nestTokenAddress
-            ,
-            //address nestNodeAddress
-            ,
-            //address nestLedgerAddress
-            _nestLedgerAddress,   
-            //address nestMiningAddress
-            ,
-            //address ntokenMiningAddress
-            ,
-            //address nestPriceFacadeAddress
-            ,//_nestPriceFacadeAddress, 
-            //address nestVoteAddress
-            , 
-            //address nestQueryAddress
-            , 
-            //address nnIncomeAddress
-            , 
-            //address nTokenControllerAddress
-            //_nTokenControllerAddress  
-
-        ) = INestGovernance(nestGovernanceAddress).getBuiltinAddress();
-    }
 
     /// @dev Modify configuration
     /// @param config Configuration object
@@ -206,34 +177,55 @@ contract NestOpenMining is NestBase, INestOpenMining {
     }
 
     /// @dev 开通报价通道
-    /// @param token0 计价代币地址。0表示eth
-    /// @param unit token0的单位
-    /// @param token1 报价代币地址。0表示eth
-    /// @param reward 挖矿代币地址。0表示挖eth
-    function open(address token0, uint unit, address token1, address reward) external override {
+    /// @param config 报价通道配置
+    function open(ChannelConfig calldata config) external override {
+
+        address token0 = config.token0;
+        address token1 = config.token1;
+        address reward = config.reward;
+
+        // 限制同一个报价对重复开通
+        uint key = uint(keccak256(abi.encodePacked(token0, token1)));
+        require(_channelMapping[key] == 0, "NOM:exists");
+
         require(token0 != token1, "NOM:token0 can't equal token1");
-        emit Open(_channels.length, token0, unit, token1, reward);
+        emit Open(_channels.length, token0, config.unit, token1, reward);
         PriceChannel storage channel = _channels.push();
         channel.token0 = token0;
-        channel.unit = uint96(unit);
+        channel.unit = config.unit;
         channel.token1 = token1;
-        channel.rewardPerBlock = uint96(1);
+        channel.rewardPerBlock = config.rewardPerBlock;
         channel.reward = reward;
+        // 管理地址
         channel.governance = msg.sender;
+        // 创世区块
         channel.genesisBlock = uint32(block.number);
-        // TODO: 衰减参数
+        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        channel.postFeeUnit = config.postFeeUnit;
+        // Single query fee (0.0001 ether, DIMI_ETHER). 100
+        channel.singleFee = config.singleFee;
+        // 衰减系数，万分制。8000
+        channel.reductionRate = config.reductionRate;
 
-        // if (token0 != address(0)) {
-        //     TransferHelper.safeTransferFrom(token0, msg.sender, address(this), 1);
-        //     require(IERC20(token0).balanceOf(address(this)) >= 1, "NOM:token0 error");
-        //     TransferHelper.safeTransfer(token0, msg.sender, 1);
-        // }
-        // if (token1 != address(0)) {
-        //     TransferHelper.safeTransferFrom(token1, msg.sender, address(this), 1);
-        //     require(IERC20(token1).balanceOf(address(this)) >= 1, "NOM:token1 error");
-        //     TransferHelper.safeTransfer(token1, msg.sender, 1);
-        // }
-        // TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, _nestLedgerAddress, 1000 ether);
+        _channelMapping[key] = _channels.length;
+
+        // 测试token地址是否可以正常转账
+        if (token0 != address(0)) {
+            TransferHelper.safeTransferFrom(token0, msg.sender, address(this), 1);
+            require(IERC20(token0).balanceOf(address(this)) >= 1, "NOM:token0 error");
+            TransferHelper.safeTransfer(token0, msg.sender, 1);
+        }
+        if (token1 != address(0)) {
+            TransferHelper.safeTransferFrom(token1, msg.sender, address(this), 1);
+            require(IERC20(token1).balanceOf(address(this)) >= 1, "NOM:token1 error");
+            TransferHelper.safeTransfer(token1, msg.sender, 1);
+        }
+        if (reward != address(0)) {
+            TransferHelper.safeTransferFrom(reward, msg.sender, address(this), 1);
+            require(IERC20(reward).balanceOf(address(this)) >= 1, "NOM:reward error");
+            TransferHelper.safeTransfer(reward, msg.sender, 1);
+        }
+        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), 1000 ether);
     }
 
     /// @dev 向报价通道注入矿币
@@ -292,11 +284,14 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
             // 管理地址
             channel.governance,
+            // 创世区块
+            channel.genesisBlock,
             // Post fee(0.0001eth，DIMI_ETHER). 1000
             channel.postFeeUnit,
             // Single query fee (0.0001 ether, DIMI_ETHER). 100
             channel.singleFee,
-            channel.genesisBlock
+            // 衰减系数，万分制。8000
+            channel.reductionRate
         );
     }
 
@@ -340,7 +335,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
         // 5. Deposit fee
         // The revenue is deposited every 256 sheets, deducting the times of taking orders and the settled part
         //uint shares = _collect(config, channel, channelId, fee);
-        require(fee >= uint(config.postFeeUnit) * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
+        require(fee >= uint(channel.postFeeUnit) * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
         channel.feeInfo += fee;
         //require(shares > 0 && shares < 256, "NM:!fee");
 
@@ -584,7 +579,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
             sheets, 
             index, 
             uint(channel.rewardPerBlock),
-            uint(channel.genesisBlock)
+            uint(channel.genesisBlock),
+            uint(channel.reductionRate)
         );
 
         if (accountIndex > 0) {
@@ -677,7 +673,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
                 return 
                     (block.number - uint(sheet.height)) 
                     * uint(channel.rewardPerBlock) 
-                    * _reduction(block.number - uint(channel.genesisBlock));
+                    * _reduction(block.number - uint(channel.genesisBlock), uint(channel.reductionRate));
             }
         }
 
@@ -915,7 +911,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceSheet[] storage sheets,
         uint index,
         uint rewardPerBlock,
-        uint genesisBlock
+        uint genesisBlock,
+        uint reductionRate
     ) private returns (uint accountIndex, Tuple memory value) {
 
         PriceSheet memory sheet = sheets[index];
@@ -936,7 +933,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
                 value.ntokenValue = uint96(
                     mined
                     * tmp
-                    * _reduction(height - genesisBlock)
+                    * _reduction(height - genesisBlock, reductionRate)
                     * rewardPerBlock
                     / totalShares / 400
                 );
@@ -964,6 +961,10 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceSheet[] storage sheets = channel.sheets;
         accountIndex = 0; 
 
+        uint rewardPerBlock = uint(channel.rewardPerBlock);
+        uint genesisBlock = uint(channel.genesisBlock);
+        uint reductionRate = uint(channel.reductionRate);
+
         // 1. Traverse sheets
         for (uint i = indices.length; i > 0;) {
 
@@ -973,8 +974,9 @@ contract NestOpenMining is NestBase, INestOpenMining {
                 config, 
                 sheets, 
                 indices[--i], 
-                uint(channel.rewardPerBlock),
-                uint(channel.genesisBlock)
+                rewardPerBlock,
+                genesisBlock,
+                reductionRate
             );
             // Batch closing quotation can only close sheet of the same user
             if (accountIndex == 0) {
@@ -1032,38 +1034,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
             minedBlocks = 10;
         }
     }
-
-    // // Collect and deposit the commission into NestLedger
-    // function _collect(
-    //     Config memory config,
-    //     PriceChannel storage channel,
-    //     uint channelId,
-    //     uint currentFee
-    // ) private returns (uint) {
-
-    //     // fee = baseFee + gas * 3
-    //     // baseFee根据postFeeUnit确定
-    //     // gas根据gasLimit * gasPrice确定，gasLimit预设为133333，gasPrice是用户设定的
-    //     // 对于EIP1559确定的gasPrice，按照实际gasPrice计算，但是用户为了保证交易不失败
-    //     // 往往需传入更大的佣金数量
-    //     require(currentFee >= uint(config.postFeeUnit) * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
-    //     uint feeInfo = channel.feeInfo;
-        
-    //     // 在本次修改以后，佣金暂存改为通过feeInfo记录总数量，基础值为2**255（表示暂存数量为0）
-    //     // 佣金每超过1 ether存入一次
-    //     feeInfo += currentFee;
-    //     if (feeInfo > 1 ether) {
-    //         // TODO: 解决channelId的问题
-    //         INestLedger(_nestLedgerAddress).carveETHReward {
-    //             value: feeInfo
-    //         } (address(uint160(channelId)));
-    //         feeInfo = 0;
-    //     }
-
-    //     channel.feeInfo = feeInfo;
-
-    //     return 1;
-    // }
 
     /// @dev freeze token
     /// @param balances Balances ledger
@@ -1166,13 +1136,22 @@ contract NestOpenMining is NestBase, INestOpenMining {
         // //| (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 10));
         // | (uint(40) << (16 * 10));
 
-    // Calculation of attenuation gradient
-    function _reduction(uint delta) private pure returns (uint) {
+    // // Calculation of attenuation gradient
+    // function _reduction(uint delta) private pure returns (uint) {
 
+    //     if (delta < NEST_REDUCTION_LIMIT) {
+    //         return (NEST_REDUCTION_STEPS >> ((delta / NEST_REDUCTION_SPAN) << 4)) & 0xFFFF;
+    //     }
+    //     return (NEST_REDUCTION_STEPS >> 160) & 0xFFFF;
+    // }
+
+    function _reduction(uint delta, uint reductionRate) private pure returns (uint) {
+        // TODO: 实现衰减参数算法
         if (delta < NEST_REDUCTION_LIMIT) {
-            return (NEST_REDUCTION_STEPS >> ((delta / NEST_REDUCTION_SPAN) << 4)) & 0xFFFF;
+            uint n = delta / NEST_REDUCTION_SPAN;
+            return 400 * reductionRate ** n / 10000 ** n;
         }
-        return (NEST_REDUCTION_STEPS >> 160) & 0xFFFF;
+        return 400 * reductionRate ** 10 / 10000 ** 10;
     }
 
     /* ========== Tools and methods ========== */

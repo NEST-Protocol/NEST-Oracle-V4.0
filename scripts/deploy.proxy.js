@@ -141,8 +141,8 @@ exports.deploy = async function() {
         pledgeNest: 100
     });
 
-    console.log('11. nestOpenMining.open()');
-    await nestOpenMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
+    // console.log('11. nestOpenMining.open()');
+    // await nestOpenMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
 
     console.log('---------- OK ----------');
     
