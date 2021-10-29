@@ -225,6 +225,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
             require(IERC20(reward).balanceOf(address(this)) >= 1, "NOM:reward error");
             TransferHelper.safeTransfer(reward, msg.sender, 1);
         }
+
+        // TODO: 收取的NEST到哪里去?
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), 1000 ether);
     }
 
@@ -655,6 +657,13 @@ contract NestOpenMining is NestBase, INestOpenMining {
         //require(balanceValue >= value, "NM:!balance");
         balance.value -= value;
 
+        // ntoken mining
+        uint ntokenBalance = INToken(tokenAddress).balanceOf(address(this));
+        if (ntokenBalance < value) {
+            // mining
+            INToken(tokenAddress).increaseTotal(value - ntokenBalance);
+        }
+
         TransferHelper.safeTransfer(tokenAddress, msg.sender, value);
     }
 
@@ -722,6 +731,26 @@ contract NestOpenMining is NestBase, INestOpenMining {
             // pay
             TransferHelper.safeTransfer(tokenAddress, to, value);
         }
+    }
+
+    /// @dev Gets the address corresponding to the given index number
+    /// @param index The index number of the specified address
+    /// @return The address corresponding to the given index number
+    function indexAddress(uint index) public view returns (address) {
+        return _accounts[index].addr;
+    }
+
+    /// @dev Gets the registration index number of the specified address
+    /// @param addr Destination address
+    /// @return 0 means nonexistent, non-0 means index number
+    function getAccountIndex(address addr) external view returns (uint) {
+        return _accountMapping[addr];
+    }
+
+    /// @dev Get the length of registered account array
+    /// @return The length of registered account array
+    function getAccountCount() external view returns (uint) {
+        return _accounts.length;
     }
 
     // Convert PriceSheet to PriceSheetView

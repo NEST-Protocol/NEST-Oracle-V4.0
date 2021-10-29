@@ -144,3 +144,19 @@ exports.Vp = function(S0, K, sigma, miu, T) {
     return K * snd(d1v / Math.sqrt(T))
     - S0 * Math.exp(miu * T) * snd(d1v / Math.sqrt(T) - sigma * Math.sqrt(T));
 }
+
+exports.UI = function(obj) {
+    if (obj) {
+        var res = {};
+        for (var i in obj) {
+            if (obj[i] && obj[i]._isBigNumber) {
+                res[i] = obj[i].toString();
+            } else {
+                res[i] = obj[i];
+            }
+        }
+        return res;
+    }
+
+    return obj;
+}
