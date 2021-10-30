@@ -1,11 +1,12 @@
 const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
-const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
+const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp, UI } = require('./utils.js');
 
 describe('NestOpenMining', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
+        const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
         const { 
             nest, usdt, hbtc,
 
@@ -79,86 +80,38 @@ describe('NestOpenMining', function() {
         await nestOpenMining.increase(0, 5000000000000000000000000000n);
         console.log(await getStatus());
 
-        if (true) {
-            console.log('1. 报价');
-
-            let receipt = await nestOpenMining.post(0, 1, 62000000000n, {
-                value: toBigInt(0.2)
-            });
-            
-            await showReceipt(receipt);
-            console.log(await getStatus());
-
-            let list = await nestOpenMining.list(0, 0, 2, 0);
-            for (var i = 0; i < list.length; ++i) {
-                let sheet = list[i];
-                console.log({
-                    index: sheet.index.toString(),
-                    miner: sheet.miner,
-                    height: sheet.height,
-                    remainNum: sheet.remainNum,
-                    ethNumBal: sheet.ethNumBal,
-                    tokenNumBal: sheet.tokenNumBal,
-                    nestNum1k: sheet.nestNum1k,
-                    level: sheet.level,
-                    shares: sheet.shares,
-                    price: sheet.price.toString()
-                });
-            }
-        }
-
-        if (true) {
-            console.log('2. 关闭');
-            for (var i = 0; i < 25; ++i) {
-                await usdt.transfer(owner.address, 0);
-            }
-            let receipt = await nestOpenMining.close(0, 0);
-            await showReceipt(receipt);
-            console.log(await getStatus());
+        if (false) {
+            console.log('1. initialize');
+            const nom = await NestOpenMining.deploy();
+            console.log('accounts.length: ' + await nom.getAccountCount());
+            await nom.initialize('0x0000000000000000000000000000000000000000');
+            await nom.initialize('0x0000000000000000000000000000000000000000');
+            await nom.initialize('0x0000000000000000000000000000000000000000');
+            await nom.initialize(nestGovernance.address);
+            console.log('accounts.length: ' + await nom.getAccountCount());
+            await nom.update(nestGovernance.address);
+            console.log('accounts.length: ' + await nom.getAccountCount());
         }
 
         if (false) {
-            console.log('3. withdraw');
-            await nestOpenMining.withdraw(usdt.address, await nestOpenMining.balanceOf(usdt.address, owner.address));
-            await nestOpenMining.withdraw(hbtc.address, await nestOpenMining.balanceOf(hbtc.address, owner.address));
-            await nestOpenMining.withdraw(nest.address, await nestOpenMining.balanceOf(nest.address, owner.address));
+            console.log('2. getConfig');
+            let cfg = await nestOpenMining.getConfig();
+            console.log(UI(cfg));
 
-            console.log(await getStatus());
-        }
-
-        if (true) {
-            console.log('3. 报价');
-
-            let receipt = await nestOpenMining.post(0, 1, 62000000000n, {
-                value: toBigInt(0.2)
+            await nestOpenMining.setConfig({
+                postEthUnit: 10,
+                postFeeUnit: 2000,
+                minerNestReward: 3000,
+                minerNTokenReward: 4500,
+                doublePostThreshold: 500,
+                ntokenMinedBlockLimit: 600,
+                maxBiteNestedLevel: 7,
+                priceEffectSpan: 80,
+                pledgeNest: 900
             });
-            
-            await showReceipt(receipt);
-            console.log(await getStatus());
 
-            let list = await nestOpenMining.list(0, 0, 2, 0);
-            for (var i = 0; i < list.length; ++i) {
-                let sheet = list[i];
-                console.log({
-                    index: sheet.index.toString(),
-                    miner: sheet.miner,
-                    height: sheet.height,
-                    remainNum: sheet.remainNum,
-                    ethNumBal: sheet.ethNumBal,
-                    tokenNumBal: sheet.tokenNumBal,
-                    nsetNum1k: sheet.nestNum1k,
-                    level: sheet.level,
-                    shares: sheet.shares,
-                    price: sheet.price.toString()
-                });
-            }
-        }
-
-        if (true) {
-            console.log('4. 吃单');
-            let receipt = await nestOpenMining.connect(addr1).takeToken1(0, 1, 1, 63000000000n);
-            await showReceipt(receipt);
-            console.log(await getStatus());
+            cfg = await nestOpenMining.getConfig();
+            console.log(UI(cfg));
         }
     });
 });

@@ -121,8 +121,40 @@ describe('NestOpenMining', function() {
                 console.log(sheets[i]);
             }
 
-            console.log('2. takeToken0');
-            await nestOpenMining.connect(addr1).takeToken0(0, 0, 1, 70000000000n, {
+            console.log('2. takeToken1');
+            if (false) {
+                await nestOpenMining.connect(addr1).takeToken1(0, 0, 1, toBigInt(15001, 6), {
+                    value: 0
+                });
+                status = await showStatus();
+    
+                console.log('sheets: ');
+                sheets = await nestOpenMining.list(0, 0, 2, 0);
+                for (var i = 0; i < sheets.length; ++i) {
+                    console.log(sheets[i]);
+                }
+    
+                expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 60000000000n, 6));
+                expect(status.owner.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n));
+                expect(status.owner.nest).to.eq(toDecimal(4000000000000000000000000000n - 1000000000000000000000n - 100000000000000000000000n));
+                expect(status.addr1.usdt).to.eq(toDecimal(toBigInt(10000000, 6), 6));
+                expect(status.addr1.hbtc).to.eq(toDecimal(toBigInt(10000000 - 1 * 2 - 1)));
+                expect(status.addr1.nest).to.eq(toDecimal(toBigInt(1000000000 - 200000)));
+                expect(status.mining.usdt).to.eq(toDecimal(toBigInt(60000, 6), 6));
+                expect(status.mining.hbtc).to.eq(toDecimal(toBigInt(1 + 1 + 1 * 2)));
+                expect(status.mining.nest).to.eq(toDecimal(toBigInt(5000000000 + 1000 + 100000 + 200000)));
+                expect(status.mining.eth).to.eq(toDecimal(toBigInt(POSTFEE) + 1000000000n * GASLIMIT));
+                
+                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, owner.address))).eq(toDecimal(0));
+                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(0, 6));
+                expect(toDecimal(await nestOpenMining.balanceOf(nest.address, owner.address))).eq(toDecimal(0));
+    
+                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, addr1.address))).eq(toDecimal(0));
+                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, addr1.address), 6)).eq(toDecimal(toBigInt(29998, 6), 6));
+                expect(toDecimal(await nestOpenMining.balanceOf(nest.address, addr1.address))).eq(toDecimal(0));
+                return;
+            }
+            await nestOpenMining.connect(addr1).takeToken1(0, 0, 1, toBigInt(50000, 6), {
                 value: 0
             });
             status = await showStatus();
@@ -136,12 +168,12 @@ describe('NestOpenMining', function() {
             expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 60000000000n, 6));
             expect(status.owner.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n));
             expect(status.owner.nest).to.eq(toDecimal(4000000000000000000000000000n - 1000000000000000000000n - 100000000000000000000000n));
-            expect(status.addr1.usdt).to.eq(toDecimal(10000000000000n - 70000000000n * 2n - 60000000000n, 6));
-            expect(status.addr1.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n * 2n + 1000000000000000000n));
-            expect(status.addr1.nest).to.eq(toDecimal(1000000000000000000000000000n - 100000000000000000000000n * 2n));
-            expect(status.mining.usdt).to.eq(toDecimal(60000000000n + 70000000000n * 2n + 60000000000n, 6));
-            expect(status.mining.hbtc).to.eq(toDecimal(1000000000000000000n + 1000000000000000000n * 2n - 1000000000000000000n));
-            expect(status.mining.nest).to.eq(toDecimal(5000000000000000000000000000n + 1000000000000000000000n + 100000000000000000000000n + 100000000000000000000000n * 2n));
+            expect(status.addr1.usdt).to.eq(toDecimal(toBigInt(10000000 - 50000 * 2 + 60000, 6), 6));
+            expect(status.addr1.hbtc).to.eq(toDecimal(toBigInt(10000000 - 1 * 2 - 1)));
+            expect(status.addr1.nest).to.eq(toDecimal(toBigInt(1000000000 - 200000)));
+            expect(status.mining.usdt).to.eq(toDecimal(toBigInt(60000 + 50000 * 2 - 60000, 6), 6));
+            expect(status.mining.hbtc).to.eq(toDecimal(toBigInt(1 + 1 + 1 * 2)));
+            expect(status.mining.nest).to.eq(toDecimal(toBigInt(5000000000 + 1000 + 100000 + 200000)));
             expect(status.mining.eth).to.eq(toDecimal(toBigInt(POSTFEE) + 1000000000n * GASLIMIT));
             
             expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, owner.address))).eq(toDecimal(0));
@@ -151,7 +183,7 @@ describe('NestOpenMining', function() {
             expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, addr1.address))).eq(toDecimal(0));
             expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, addr1.address), 6)).eq(toDecimal(0, 6));
             expect(toDecimal(await nestOpenMining.balanceOf(nest.address, addr1.address))).eq(toDecimal(0));
-
+            
             if (false) {
                 console.log('1. wait 20 and close');
                 await skipBlocks(20);
@@ -162,20 +194,20 @@ describe('NestOpenMining', function() {
                 expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 60000000000n, 6));
                 expect(status.owner.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n));
                 expect(status.owner.nest).to.eq(toDecimal(4000000000000000000000000000n - 1000000000000000000000n - 100000000000000000000000n));
-                expect(status.addr1.usdt).to.eq(toDecimal(10000000000000n - 70000000000n * 2n - 60000000000n, 6));
-                expect(status.addr1.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n * 2n + 1000000000000000000n));
-                expect(status.addr1.nest).to.eq(toDecimal(1000000000000000000000000000n - 100000000000000000000000n * 2n));
-                expect(status.mining.usdt).to.eq(toDecimal(60000000000n + 70000000000n * 2n + 60000000000n, 6));
-                expect(status.mining.hbtc).to.eq(toDecimal(1000000000000000000n + 1000000000000000000n * 2n - 1000000000000000000n));
-                expect(status.mining.nest).to.eq(toDecimal(5000000000000000000000000000n + 1000000000000000000000n + 100000000000000000000000n + 100000000000000000000000n * 2n));
+                expect(status.addr1.usdt).to.eq(toDecimal(toBigInt(10000000 - 50000 * 2 + 60000, 6), 6));
+                expect(status.addr1.hbtc).to.eq(toDecimal(toBigInt(10000000 - 1 * 2 - 1)));
+                expect(status.addr1.nest).to.eq(toDecimal(toBigInt(1000000000 - 200000)));
+                expect(status.mining.usdt).to.eq(toDecimal(toBigInt(60000 + 50000 * 2 - 60000, 6), 6));
+                expect(status.mining.hbtc).to.eq(toDecimal(toBigInt(1 + 1 + 1 * 2)));
+                expect(status.mining.nest).to.eq(toDecimal(toBigInt(5000000000 + 1000 + 100000 + 200000)));
                 expect(status.mining.eth).to.eq(toDecimal(toBigInt(POSTFEE) + 1000000000n * GASLIMIT));
                 
-                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, owner.address))).eq(toDecimal(toBigInt(0)));
-                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(toBigInt(60000 * 2, 6), 6));
-                expect(toDecimal(await nestOpenMining.balanceOf(nest.address, owner.address))).eq(toDecimal(100000000000000000000000n * 1n + 10000000000000000000n));
+                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, owner.address))).eq(toDecimal(toBigInt(2)));
+                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(toBigInt(0, 6), 6));
+                expect(toDecimal(await nestOpenMining.balanceOf(nest.address, owner.address))).eq(toDecimal(toBigInt(100000 + 10)));
 
                 expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, addr1.address))).eq(toDecimal(toBigInt(2)));
-                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, addr1.address), 6)).eq(toDecimal(toBigInt(2 * 70000, 6), 6));
+                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, addr1.address), 6)).eq(toDecimal(toBigInt(50000 * 2, 6), 6));
                 expect(toDecimal(await nestOpenMining.balanceOf(nest.address, addr1.address))).eq(toDecimal(toBigInt(200000)));
 
                 console.log('sheets: ');
@@ -195,27 +227,27 @@ describe('NestOpenMining', function() {
                 }
             } else {
                 console.log('2. 吃单链');
-                await nestOpenMining.takeToken0(0, 1, 2, 65000000000n);
+                await nestOpenMining.takeToken1(0, 1, 2, toBigInt(70000, 6));
                 status = await showStatus();
 
-                expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 60000000000n - 65000000000n * 4n - 70000000000n * 2n, 6));
-                expect(status.owner.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n - 1000000000000000000n * 2n));
-                expect(status.owner.nest).to.eq(toDecimal(4000000000000000000000000000n - 1000000000000000000000n - 100000000000000000000000n - toBigInt(100000 * 4)));
-                expect(status.addr1.usdt).to.eq(toDecimal(10000000000000n - 70000000000n * 2n - 60000000000n, 6));
-                expect(status.addr1.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n * 2n + 1000000000000000000n));
-                expect(status.addr1.nest).to.eq(toDecimal(1000000000000000000000000000n - 100000000000000000000000n * 2n));
-                expect(status.mining.usdt).to.eq(toDecimal(60000000000n + 70000000000n * 2n + 60000000000n + 65000000000n * 4n + 70000000000n * 2n, 6));
-                expect(status.mining.hbtc).to.eq(toDecimal(1000000000000000000n + 1000000000000000000n * 2n - 1000000000000000000n + 1000000000000000000n * 2n));
-                expect(status.mining.nest).to.eq(toDecimal(5000000000000000000000000000n + 1000000000000000000000n + 100000000000000000000000n + 100000000000000000000000n * 2n + toBigInt(100000 * 4)));
+                expect(status.owner.usdt).to.eq(toDecimal(toBigInt(10000000 - 60000 - 70000 * 4 + 50000 * 2, 6), 6));
+                expect(status.owner.hbtc).to.eq(toDecimal(toBigInt(10000000 - 1 - 1 * 4 - 1 * 2)));
+                expect(status.owner.nest).to.eq(toDecimal(toBigInt(4000000000 - 1000 - 100000 - 400000)));
+                expect(status.addr1.usdt).to.eq(toDecimal(toBigInt(10000000 - 50000 * 2 + 60000, 6), 6));
+                expect(status.addr1.hbtc).to.eq(toDecimal(toBigInt(10000000 - 1 * 2 - 1)));
+                expect(status.addr1.nest).to.eq(toDecimal(toBigInt(1000000000 - 200000)));
+                expect(status.mining.usdt).to.eq(toDecimal(toBigInt(60000 + 50000 * 2 - 60000 + 70000 * 4 - 50000 * 2, 6), 6));
+                expect(status.mining.hbtc).to.eq(toDecimal(toBigInt(1 + 1 + 2 + 2 + 4)));
+                expect(status.mining.nest).to.eq(toDecimal(toBigInt(5000000000 + 1000 + 100000 + 200000 + 400000)));
                 expect(status.mining.eth).to.eq(toDecimal(toBigInt(POSTFEE) + 1000000000n * GASLIMIT));
                 
-                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, owner.address))).eq(toDecimal(toBigInt(0)));
-                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(toBigInt(0, 6), 6));
+                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, owner.address))).eq(toDecimal(0));
+                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(0, 6));
                 expect(toDecimal(await nestOpenMining.balanceOf(nest.address, owner.address))).eq(toDecimal(0));
-
-                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, addr1.address))).eq(toDecimal(toBigInt(0)));
-                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, addr1.address), 6)).eq(toDecimal(toBigInt(0, 6), 6));
-                expect(toDecimal(await nestOpenMining.balanceOf(nest.address, addr1.address))).eq(toDecimal(toBigInt(0)));
+    
+                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, addr1.address))).eq(toDecimal(0));
+                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, addr1.address), 6)).eq(toDecimal(0, 6));
+                expect(toDecimal(await nestOpenMining.balanceOf(nest.address, addr1.address))).eq(toDecimal(0));
 
                 console.log('1. wait 20 and close');
                 await skipBlocks(20);
@@ -224,23 +256,23 @@ describe('NestOpenMining', function() {
                 await nestOpenMining.close(0, 2);
                 status = await showStatus();
 
-                expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 60000000000n - 65000000000n * 4n - 70000000000n * 2n, 6));
-                expect(status.owner.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n - 1000000000000000000n * 2n));
-                expect(status.owner.nest).to.eq(toDecimal(4000000000000000000000000000n - 1000000000000000000000n - 100000000000000000000000n - toBigInt(100000 * 4)));
-                expect(status.addr1.usdt).to.eq(toDecimal(10000000000000n - 70000000000n * 2n - 60000000000n, 6));
-                expect(status.addr1.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n * 2n + 1000000000000000000n));
-                expect(status.addr1.nest).to.eq(toDecimal(1000000000000000000000000000n - 100000000000000000000000n * 2n));
-                expect(status.mining.usdt).to.eq(toDecimal(60000000000n + 70000000000n * 2n + 60000000000n + 65000000000n * 4n + 70000000000n * 2n, 6));
-                expect(status.mining.hbtc).to.eq(toDecimal(1000000000000000000n + 1000000000000000000n * 2n - 1000000000000000000n + 1000000000000000000n * 2n));
-                expect(status.mining.nest).to.eq(toDecimal(5000000000000000000000000000n + 1000000000000000000000n + 100000000000000000000000n + 100000000000000000000000n * 2n + toBigInt(100000 * 4)));
+                expect(status.owner.usdt).to.eq(toDecimal(toBigInt(10000000 - 60000 - 70000 * 4 + 50000 * 2, 6), 6));
+                expect(status.owner.hbtc).to.eq(toDecimal(toBigInt(10000000 - 1 - 1 * 4 - 1 * 2)));
+                expect(status.owner.nest).to.eq(toDecimal(toBigInt(4000000000 - 1000 - 100000 - 400000)));
+                expect(status.addr1.usdt).to.eq(toDecimal(toBigInt(10000000 - 50000 * 2 + 60000, 6), 6));
+                expect(status.addr1.hbtc).to.eq(toDecimal(toBigInt(10000000 - 1 * 2 - 1)));
+                expect(status.addr1.nest).to.eq(toDecimal(toBigInt(1000000000 - 200000)));
+                expect(status.mining.usdt).to.eq(toDecimal(toBigInt(60000 + 50000 * 2 - 60000 + 70000 * 4 - 50000 * 2, 6), 6));
+                expect(status.mining.hbtc).to.eq(toDecimal(toBigInt(1 + 1 + 2 + 2 + 4)));
+                expect(status.mining.nest).to.eq(toDecimal(toBigInt(5000000000 + 1000 + 100000 + 200000 + 400000)));
                 expect(status.mining.eth).to.eq(toDecimal(toBigInt(POSTFEE) + 1000000000n * GASLIMIT));
                 
-                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, owner.address))).eq(toDecimal(toBigInt(4)));
-                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(toBigInt(65000*4+60000*2, 6), 6));
+                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, owner.address))).eq(toDecimal(toBigInt(2 + 4)));
+                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(toBigInt(0 + 4 * 70000, 6), 6));
                 expect(toDecimal(await nestOpenMining.balanceOf(nest.address, owner.address))).eq(toDecimal(toBigInt(100000 + 400000 + 10)));
-
-                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, addr1.address))).eq(toDecimal(toBigInt(0)));
-                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, addr1.address), 6)).eq(toDecimal(toBigInt(70000 * 4, 6), 6));
+    
+                expect(toDecimal(await nestOpenMining.balanceOf(hbtc.address, addr1.address))).eq(toDecimal(toBigInt(2 + 2)));
+                expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, addr1.address), 6)).eq(toDecimal(toBigInt(0, 6), 6));
                 expect(toDecimal(await nestOpenMining.balanceOf(nest.address, addr1.address))).eq(toDecimal(toBigInt(200000)));
 
                 console.log('price: ');
