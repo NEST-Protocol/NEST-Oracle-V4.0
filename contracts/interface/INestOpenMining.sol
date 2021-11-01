@@ -264,6 +264,10 @@ interface INestOpenMining {
         uint index
     ) external view returns (uint minedBlocks, uint totalShares);
 
+    /// @dev The function returns eth rewards of specified ntoken
+    /// @param channelId 报价通道编号
+    function totalETHRewards(uint channelId) external view returns (uint);
+
     /// @dev Pay
     /// @param channelId 报价通道编号
     /// @param tokenAddress Token address of receiving funds (0 means ETH)

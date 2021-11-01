@@ -231,9 +231,12 @@ describe('NestOpenMining', function() {
                 
                 console.log('1. wait 20 and close');
                 await skipBlocks(20);
-                await nestOpenMining.close(0, 0);
-                await nestOpenMining.close(0, 1);
-                await nestOpenMining.close(0, 2);
+                // await nestOpenMining.close(0, 0);
+                // await nestOpenMining.close(0, 1);
+                // await nestOpenMining.close(0, 2);
+
+                await nestOpenMining.closeList(0, [0, 2]);
+                await nestOpenMining.closeList(0, [1]);
                 status = await showStatus();
 
                 expect(status.owner.usdt).to.eq(toDecimal(toBigInt(10000000 - 2000 - 2000 * 4 - 2000 * 2, 6), 6));
@@ -262,24 +265,11 @@ describe('NestOpenMining', function() {
             }
 
             if (true) {
-                console.log('3. withdraw');
-                let prev = await showStatus();
-                await nestOpenMining.withdraw(usdt.address, toBigInt(2000 + 2000 + 2000 * 4, 6));
-                await nestOpenMining.withdraw(nest.address, toBigInt(100000 + 400000 + 10));
-                await nestOpenMining.connect(addr1).withdraw(usdt.address, toBigInt(2000 * 4, 6));
-                await nestOpenMining.connect(addr1).withdraw(nest.address, toBigInt(200000));
-
-                let now = await showStatus();
-
-                expect(toDecimal(toBigInt(parseFloat(now.owner.usdt) - parseFloat(prev.owner.usdt), 6), 6)).eq(toDecimal(toBigInt(2000 + 2000 + 2000 * 4, 6), 6));
-                expect(toDecimal(toBigInt(parseFloat(now.owner.nest) - parseFloat(prev.owner.nest)))).eq(toDecimal(toBigInt(100000 + 400000 + 10)));
-                expect(toDecimal(toBigInt(parseFloat(now.addr1.usdt) - parseFloat(prev.addr1.usdt), 6), 6)).eq(toDecimal(toBigInt(2000 * 4, 6), 6));
-                expect(toDecimal(toBigInt(parseFloat(now.addr1.nest) - parseFloat(prev.addr1.nest)))).eq(toDecimal(toBigInt(200000)));
-
-                console.log({
-                    a: toDecimal(toBigInt(parseFloat(now.owner.nest) - parseFloat(prev.owner.nest))),
-                    b: toDecimal(toBigInt(100000 + 400000 + 10))
-                })
+                console.log('3. list');
+                let list = await nestOpenMining.list(0, 1, 2, 1);
+                for (var i = 0; i < list.length; ++i) {
+                    console.log(UI(list[i]));
+                }
             }
         }
     });

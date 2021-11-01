@@ -25,14 +25,27 @@ describe('NestOpenMining', function() {
                 hbtc: toDecimal(await hbtc.balanceOf(account), 18),
                 nest: toDecimal(await nest.balanceOf(account), 18),
             };
-        }
+        };
+
         const getStatus = async function() {
             return {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await getAccountInfo(owner),
                 addr1: await getAccountInfo(addr1),
             };
-        }
+        };
+
+        const showStatus = async function() {
+            let status = await getStatus();
+            console.log(status);
+            return status;
+        };
+
+        const skipBlocks = async function(n) {
+            for (var i = 0; i < n; ++i) {
+                await usdt.transfer(owner.address, 0);
+            }
+        };
 
         await usdt.transfer(owner.address, 10000000000000n);
         await hbtc.transfer(owner.address, 10000000000000000000000000n);
@@ -112,6 +125,47 @@ describe('NestOpenMining', function() {
 
             cfg = await nestOpenMining.getConfig();
             console.log(UI(cfg));
+        }
+
+        const GASLIMIT = 400000n;
+        const POSTFEE = 0.1;
+        if (true) {
+            console.log('3. post');
+            let receipt = await nestOpenMining.post(0, 1, 60000000000n, {
+                value: toBigInt(POSTFEE) + 1000000000n * GASLIMIT
+            });
+            await showReceipt(receipt);
+            let status = await showStatus();
+        }
+
+        if (true) {
+            console.log('4. changeGovernance');
+            let ci = await nestOpenMining.getChannelInfo(0);
+            console.log(UI(ci));
+            console.log('owner: ' + owner.address);
+            expect(ci.governance).to.eq(owner.address);
+
+            await nestOpenMining.changeGovernance(0, addr1.address);
+            ci = await nestOpenMining.getChannelInfo(0);
+            console.log(UI(ci));
+            console.log('addr1: ' + addr1.address);
+            expect(ci.governance).to.eq(addr1.address);
+
+            await nestOpenMining.connect(addr1).changeGovernance(0, owner.address);
+            ci = await nestOpenMining.getChannelInfo(0);
+            console.log(UI(ci));
+            expect(ci.governance).to.eq(owner.address);
+
+            if (true) {
+                console.log('5. pay');
+                
+                let rewards = await nestOpenMining.totalETHRewards(0);
+                console.log('rewards: ' + toDecimal(rewards));
+                await nestOpenMining.pay(0, '0x0000000000000000000000000000000000000000', addr1.address, toBigInt(0.1));
+                console.log(await getStatus());
+                rewards = await nestOpenMining.totalETHRewards(0);
+                console.log('rewards: ' + toDecimal(rewards));
+            }
         }
     });
 });

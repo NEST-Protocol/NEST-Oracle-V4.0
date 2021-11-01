@@ -710,6 +710,12 @@ contract NestOpenMining is NestBase, INestOpenMining {
         return _calcMinedBlocks(sheets, index, sheet);
     }
 
+    /// @dev The function returns eth rewards of specified ntoken
+    /// @param channelId 报价通道编号
+    function totalETHRewards(uint channelId) external view override returns (uint) {
+        return _channels[channelId].feeInfo;
+    }
+
     /// @dev Pay
     /// @param channelId 报价通道编号
     /// @param tokenAddress Token address of receiving funds (0 means ETH)
@@ -718,7 +724,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
     function pay(uint channelId, address tokenAddress, address to, uint value) external override {
 
         PriceChannel storage channel = _channels[channelId];
-        require(channel.governance == msg.sender, "NestLedger:!governance");
+        require(channel.governance == msg.sender, "NOM:!governance");
         channel.feeInfo -= value;
 
         // Pay eth from ledger
