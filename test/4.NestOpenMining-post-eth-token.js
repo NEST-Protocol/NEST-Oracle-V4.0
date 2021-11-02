@@ -212,5 +212,7 @@ describe('NestOpenMining', function() {
             let price = await nestPrice.triggeredPriceInfo(0);
             console.log(UI(price));
         }
+        
+        console.log('getAccountCount: ' + await nestOpenMining.getAccountCount());
     });
 });

@@ -260,6 +260,8 @@ describe('NestOpenMining', function() {
                     });
                 }
             }
+            
+            console.log('getAccountCount: ' + await nestOpenMining.getAccountCount());
         }
     });
 });

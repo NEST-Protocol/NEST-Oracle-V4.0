@@ -281,6 +281,17 @@ describe('NestOpenMining', function() {
                     b: toDecimal(toBigInt(100000 + 400000 + 10))
                 })
             }
+
+            let count = await nestOpenMining.getAccountCount();
+            console.log('getAccountCount: ' + count);
+            for (var i = 0; i < count; ++i) {
+                let addr = await nestOpenMining.indexAddress(i);
+                let idex = await nestOpenMining.getAccountIndex(addr);
+                console.log('indexAddress' + i + ': ' + addr + ', ' + idex);
+            }
+
+            console.log('owner: ' + owner.address);
+            console.log('addr1: ' + addr1.address);
         }
     });
 });

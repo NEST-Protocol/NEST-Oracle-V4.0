@@ -122,6 +122,9 @@ contract NestOpenMining is NestBase, INestOpenMining {
         uint16 singleFee;
         // 衰减系数，万分制。8000
         uint16 reductionRate;
+
+        // TODO: 抵押代币也需要可以设置，不一定用NEST
+        // TODO：确定抵押代币是全局设置，还是单独设置
     }
 
     /// @dev Structure is used to represent a storage location. Storage variable can be used to avoid indexing 
@@ -220,11 +223,12 @@ contract NestOpenMining is NestBase, INestOpenMining {
             require(IERC20(token1).balanceOf(address(this)) >= 1, "NOM:token1 error");
             TransferHelper.safeTransfer(token1, msg.sender, 1);
         }
-        if (reward != address(0)) {
-            TransferHelper.safeTransferFrom(reward, msg.sender, address(this), 1);
-            require(IERC20(reward).balanceOf(address(this)) >= 1, "NOM:reward error");
-            TransferHelper.safeTransfer(reward, msg.sender, 1);
-        }
+        // TODO: 考虑到ntoken挖矿，可以不检查
+        // if (reward != address(0)) {
+        //     TransferHelper.safeTransferFrom(reward, msg.sender, address(this), 1);
+        //     require(IERC20(reward).balanceOf(address(this)) >= 1, "NOM:reward error");
+        //     TransferHelper.safeTransfer(reward, msg.sender, 1);
+        // }
 
         // TODO: 收取的NEST到哪里去?
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), 1000 ether);
@@ -675,18 +679,21 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceChannel storage channel = _channels[channelId];
         PriceSheet[] storage sheets = channel.sheets;
         uint index = sheets.length;
+        uint blocks = 10;
         while (index > 0) {
 
             PriceSheet memory sheet = sheets[--index];
             if (uint(sheet.shares) > 0) {
-                return 
-                    (block.number - uint(sheet.height)) 
-                    * uint(channel.rewardPerBlock) 
-                    * _reduction(block.number - uint(channel.genesisBlock), uint(channel.reductionRate));
+                blocks = block.number - uint(sheet.height);
+                break;
             }
         }
 
-        return 0;
+        return 
+            blocks
+            * uint(channel.rewardPerBlock) 
+            * _reduction(block.number - uint(channel.genesisBlock), uint(channel.reductionRate))
+            / 400;
     }
 
     /// @dev Query the quantity of the target quotation
@@ -1194,7 +1201,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return float format
-    function _encodeFloat(uint value) internal pure returns (uint56) {
+    function _encodeFloat(uint value) private pure returns (uint56) {
 
         uint exponent = 0; 
         while (value > 0x3FFFFFFFFFFFF) {
@@ -1207,7 +1214,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
     /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
     /// @param floatValue fraction value
     /// @return decode format
-    function _decodeFloat(uint56 floatValue) internal pure returns (uint) {
+    function _decodeFloat(uint56 floatValue) private pure returns (uint) {
         return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 
