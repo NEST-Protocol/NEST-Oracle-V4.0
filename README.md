@@ -1,5 +1,5 @@
-# NEST-Oracle-V3.6
-The NEST Oracle Smart Contract 3.6 is a solidity smart contract implementation of NEST Protocol which provide a unique on-chain Price Oracle through a decentralized mechanism.
+# NEST-Oracle-V4.0
+The NEST Oracle Smart Contract 4.0 is a solidity smart contract implementation of NEST Protocol which provide a unique on-chain Price Oracle through a decentralized mechanism.
 
 ![](https://img.shields.io/github/issues/NEST-Protocol/NEST-Oracle-V3.6)
 ![](https://img.shields.io/github/stars/NEST-Protocol/NEST-Oracle-V3.6)
