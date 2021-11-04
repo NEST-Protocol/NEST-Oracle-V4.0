@@ -342,7 +342,9 @@ contract NestOpenMining is NestBase, INestOpenMining {
         // The revenue is deposited every 256 sheets, deducting the times of taking orders and the settled part
         //uint shares = _collect(config, channel, channelId, fee);
         require(fee >= uint(channel.postFeeUnit) * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
-        channel.feeInfo += fee;
+        if (fee > 0) {
+            channel.feeInfo += fee;
+        }
         //require(shares > 0 && shares < 256, "NM:!fee");
 
         // Calculate the price
@@ -596,10 +598,18 @@ contract NestOpenMining is NestBase, INestOpenMining {
             _unfreeze(balances, channel.token0, uint(total.ethNum) * uint(channel.unit), accountIndex);
             // 解冻token1
             _unfreeze(balances, channel.token1, uint(total.tokenValue), accountIndex);
-            // 奖励矿币
-            _unfreeze(balances, channel.reward, uint(total.ntokenValue), accountIndex);
             // 解冻nest
             _unfreeze(balances, NEST_TOKEN_ADDRESS, uint(total.nestValue), accountIndex);
+
+            uint vault = uint(channel.vault);
+            uint ntokenValue = uint(total.ntokenValue);
+            if (ntokenValue > vault) {
+                ntokenValue = vault;
+            }
+            // 记录每个通道矿币的数量，防止开通者不打币，直接用资金池内的资金
+            channel.vault = uint96(vault - ntokenValue);
+            // 奖励矿币
+            _unfreeze(balances, channel.reward, ntokenValue, accountIndex);
         }
 
         // Calculate the price
@@ -626,10 +636,18 @@ contract NestOpenMining is NestBase, INestOpenMining {
         _unfreeze(balances, channel.token0, uint(total.ethNum) * uint(channel.unit), accountIndex);
         // 解冻token1
         _unfreeze(balances, channel.token1, uint(total.tokenValue), accountIndex);
-        // 奖励矿币
-        _unfreeze(balances, channel.reward, uint(total.ntokenValue), accountIndex);
         // 解冻nest
         _unfreeze(balances, NEST_TOKEN_ADDRESS, uint(total.nestValue), accountIndex);
+
+        uint vault = uint(channel.vault);
+        uint ntokenValue = uint(total.ntokenValue);
+        if (ntokenValue > vault) {
+            ntokenValue = vault;
+        }
+        // 记录每个通道矿币的数量，防止开通者不打币，直接用资金池内的资金
+        channel.vault = uint96(vault - ntokenValue);
+        // 奖励矿币
+        _unfreeze(balances, channel.reward, ntokenValue, accountIndex);
     }
 
     /// @dev The function updates the statistics of price sheets
