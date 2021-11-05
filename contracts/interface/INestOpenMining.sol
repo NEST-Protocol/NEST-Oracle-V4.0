@@ -221,17 +221,11 @@ interface INestOpenMining {
     /// @return List of price sheets
     function list(uint channelId, uint offset, uint count, uint order) external view returns (PriceSheetView[] memory);
 
-    /// @notice Close a price sheet of (ETH, USDx) | (ETH, NEST) | (ETH, TOKEN) | (ETH, NTOKEN)
-    /// @dev Here we allow an empty price sheet (still in VERIFICATION-PERIOD) to be closed
-    /// @param channelId 报价通道编号
-    /// @param index The index of the price sheet w.r.t. `token`
-    function close(uint channelId, uint index) external;
-    
     /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
     /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
     /// @param channelId 报价通道编号
     /// @param indices A list of indices of sheets w.r.t. `token`
-    function closeList(uint channelId, uint[] memory indices) external;
+    function close(uint channelId, uint[] memory indices) external;
 
     /// @dev The function updates the statistics of price sheets
     ///     It calculates from priceInfo to the newest that is effective.

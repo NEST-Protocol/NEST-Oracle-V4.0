@@ -122,7 +122,7 @@ describe('NestOpenMining', function() {
             }
 
             console.log('1. close');
-            await nestOpenMining.close(0, 0);
+            await nestOpenMining.close(0, [0]);
             status = await showStatus();
             expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 60000000000n, 6));
             expect(status.owner.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n));
@@ -138,7 +138,7 @@ describe('NestOpenMining', function() {
 
             console.log('1. wait 20 and close');
             await skipBlocks(20);
-            await nestOpenMining.close(0, 0);
+            await nestOpenMining.close(0, [0]);
             status = await showStatus();
             expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 60000000000n, 6));
             expect(status.owner.hbtc).to.eq(toDecimal(10000000000000000000000000n - 1000000000000000000n));

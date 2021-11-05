@@ -70,6 +70,21 @@ describe('NestOpenMining', function() {
             '0x0000000000000000000000000000000000000000',
             '0x0000000000000000000000000000000000000000',
             '0x0000000000000000000000000000000000000000', //nestMining.address,
+            owner.address, //nestMining.address,
+            '0x0000000000000000000000000000000000000000',
+            '0x0000000000000000000000000000000000000000',
+            '0x0000000000000000000000000000000000000000', //nestMining.address,
+            '0x0000000000000000000000000000000000000000',
+            '0x0000000000000000000000000000000000000000'
+        );
+        await nhbtc.update(nestGovernance.address);
+        await nhbtc.increaseTotal(1);
+        await nhbtc.approve(nestOpenMining.address, 1);
+        await nestGovernance.setBuiltinAddress(
+            '0x0000000000000000000000000000000000000000',
+            '0x0000000000000000000000000000000000000000',
+            '0x0000000000000000000000000000000000000000',
+            '0x0000000000000000000000000000000000000000', //nestMining.address,
             nestOpenMining.address, //nestMining.address,
             '0x0000000000000000000000000000000000000000',
             '0x0000000000000000000000000000000000000000',
@@ -78,8 +93,7 @@ describe('NestOpenMining', function() {
             '0x0000000000000000000000000000000000000000'
         );
         await nhbtc.update(nestGovernance.address);
-        //await nhbtc.increaseTotal(toBigInt(100000));
-        //await nestOpenMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
+
         await nestOpenMining.open({
             // 计价代币地址, 0表示eth
             token0: usdt.address,
@@ -108,8 +122,7 @@ describe('NestOpenMining', function() {
             // 衰减系数，万分制。8000
             reductionRate: 8000
         });
-        //await nestOpenMining.increase(0, 5000000000000000000000000000n);
-        await nest.transfer(nestOpenMining.address, 5000000000000000000000000000n);
+        await nestOpenMining.increaseNToken(0, 5000000000000000000000000000n);
         console.log(await getStatus());
 
         const GASLIMIT = 400000n;

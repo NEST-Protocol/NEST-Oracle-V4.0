@@ -155,8 +155,8 @@ describe('NestOpenMining', function() {
             if (false) {
                 console.log('1. wait 20 and close');
                 await skipBlocks(20);
-                await nestOpenMining.close(0, 0);
-                await nestOpenMining.close(0, 1);
+                await nestOpenMining.close(0, [0]);
+                await nestOpenMining.close(0, [1]);
                 status = await showStatus();
 
                 expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 60000000000n, 6));
@@ -219,9 +219,9 @@ describe('NestOpenMining', function() {
 
                 console.log('1. wait 20 and close');
                 await skipBlocks(20);
-                await nestOpenMining.close(0, 0);
-                await nestOpenMining.close(0, 1);
-                await nestOpenMining.close(0, 2);
+                await nestOpenMining.close(0, [0]);
+                await nestOpenMining.close(0, [1]);
+                await nestOpenMining.close(0, [2]);
                 status = await showStatus();
 
                 expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 60000000000n - 65000000000n * 4n - 70000000000n * 2n, 6));

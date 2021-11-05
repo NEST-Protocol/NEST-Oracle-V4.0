@@ -4,11 +4,10 @@ pragma solidity ^0.8.6;
 
 import "./lib/IERC20.sol";
 import "./lib/TransferHelper.sol";
+
 import "./interface/INestOpenMining.sol";
-import "./interface/INestQuery.sol";
-import "./interface/INTokenController.sol";
-import "./interface/INestLedger.sol";
 import "./interface/INToken.sol";
+
 import "./NestBase.sol";
 
 import "hardhat/console.sol";
@@ -224,11 +223,11 @@ contract NestOpenMining is NestBase, INestOpenMining {
             TransferHelper.safeTransfer(token1, msg.sender, 1);
         }
         // TODO: 考虑到ntoken挖矿，可以不检查
-        // if (reward != address(0)) {
-        //     TransferHelper.safeTransferFrom(reward, msg.sender, address(this), 1);
-        //     require(IERC20(reward).balanceOf(address(this)) >= 1, "NOM:reward error");
-        //     TransferHelper.safeTransfer(reward, msg.sender, 1);
-        // }
+        if (reward != address(0)) {
+            TransferHelper.safeTransferFrom(reward, msg.sender, address(this), 1);
+            require(IERC20(reward).balanceOf(address(this)) >= 1, "NOM:reward error");
+            TransferHelper.safeTransfer(reward, msg.sender, 1);
+        }
 
         // TODO: 收取的NEST到哪里去?
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), 1000 ether);
@@ -245,6 +244,15 @@ contract NestOpenMining is NestBase, INestOpenMining {
         } else {
             TransferHelper.safeTransferFrom(reward, msg.sender, address(this), vault);
         }
+        channel.vault += vault;
+    }
+
+    /// @dev 向报价通道注入NToken矿币
+    /// @param channelId 报价通道
+    /// @param vault 注入矿币数量
+    function increaseNToken(uint channelId, uint96 vault) external onlyGovernance {
+        PriceChannel storage channel = _channels[channelId];
+        INToken(channel.reward).increaseTotal(vault);
         channel.vault += vault;
     }
 
@@ -571,56 +579,11 @@ contract NestOpenMining is NestBase, INestOpenMining {
         return result;
     }
 
-    /// @notice Close a price sheet of (ETH, USDx) | (ETH, NEST) | (ETH, TOKEN) | (ETH, NTOKEN)
-    /// @dev Here we allow an empty price sheet (still in VERIFICATION-PERIOD) to be closed
-    /// @param channelId 报价通道编号
-    /// @param index The index of the price sheet w.r.t. `token`
-    function close(uint channelId, uint index) external override {
-        
-        Config memory config = _config;
-        PriceChannel storage channel = _channels[channelId];
-        PriceSheet[] storage sheets = channel.sheets;
-
-        // Call _close() method to close price sheet
-        (uint accountIndex, Tuple memory total) = _close(
-            config, 
-            sheets, 
-            index, 
-            uint(channel.rewardPerBlock),
-            uint(channel.genesisBlock),
-            uint(channel.reductionRate)
-        );
-
-        if (accountIndex > 0) {
-            mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
-
-            // 解冻token0
-            _unfreeze(balances, channel.token0, uint(total.ethNum) * uint(channel.unit), accountIndex);
-            // 解冻token1
-            _unfreeze(balances, channel.token1, uint(total.tokenValue), accountIndex);
-            // 解冻nest
-            _unfreeze(balances, NEST_TOKEN_ADDRESS, uint(total.nestValue), accountIndex);
-
-            uint vault = uint(channel.vault);
-            uint ntokenValue = uint(total.ntokenValue);
-            if (ntokenValue > vault) {
-                ntokenValue = vault;
-            }
-            // 记录每个通道矿币的数量，防止开通者不打币，直接用资金池内的资金
-            channel.vault = uint96(vault - ntokenValue);
-            // 奖励矿币
-            _unfreeze(balances, channel.reward, ntokenValue, accountIndex);
-        }
-
-        // Calculate the price
-        _stat(config, channel, sheets);
-    }
-    
     /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
     /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
     /// @param channelId 报价通道编号
     /// @param indices A list of indices of sheets w.r.t. `token`
-    function closeList(uint channelId, uint[] memory indices) external override {
+    function close(uint channelId, uint[] memory indices) external override {
         
         PriceChannel storage channel = _channels[channelId];
 
@@ -678,13 +641,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
         //uint balanceValue = balance.value;
         //require(balanceValue >= value, "NM:!balance");
         balance.value -= value;
-
-        // ntoken mining
-        uint ntokenBalance = INToken(tokenAddress).balanceOf(address(this));
-        if (ntokenBalance < value) {
-            // mining
-            INToken(tokenAddress).increaseTotal(value - ntokenBalance);
-        }
 
         TransferHelper.safeTransfer(tokenAddress, msg.sender, value);
     }
