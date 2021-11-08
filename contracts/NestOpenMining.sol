@@ -347,13 +347,14 @@ contract NestOpenMining is NestBase, INestOpenMining {
         fee = _freeze(balances, NEST_TOKEN_ADDRESS, uint(config.pledgeNest) * 1000 ether, fee);
     
         // 5. Deposit fee
-        // The revenue is deposited every 256 sheets, deducting the times of taking orders and the settled part
-        //uint shares = _collect(config, channel, channelId, fee);
-        require(fee >= uint(channel.postFeeUnit) * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
+        // 只有配置了报价佣金时才检查fee
+        uint postFeeUnit = uint(channel.postFeeUnit);
+        if (postFeeUnit > 0) {
+            require(fee >= postFeeUnit * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
+        }
         if (fee > 0) {
             channel.feeInfo += fee;
         }
-        //require(shares > 0 && shares < 256, "NM:!fee");
 
         // Calculate the price
         // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
