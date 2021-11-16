@@ -57,6 +57,13 @@ module.exports = {
       gasPrice:1e9,
       timeout: 2000000000
     },
+    bsc: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      chainId: 97,
+      gasPrice: 20000000000,
+      accounts: [config.account.rinkeby.key, config.account.rinkeby.userA, config.account.rinkeby.userB],
+      timeout: 2000000000
+    },
     hardhat: {
       gas: 6000000,
       initialBaseFeePerGas: 0,

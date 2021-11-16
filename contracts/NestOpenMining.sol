@@ -684,7 +684,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceSheet[] storage sheets = _channels[channelId].sheets;
         PriceSheet memory sheet = sheets[index];
 
-        // The bite sheet or ntoken sheet dosen't mining
+        // The bite sheet or ntoken sheet doesn't mining
         if (uint(sheet.shares) == 0) {
             return (0, 0);
         }
@@ -941,7 +941,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
             // TMP: tmp is a polysemous name, here means sheet.shares
             uint tmp = uint(sheet.shares);
             // Mining logic
-            // The price sheet which shares is zero dosen't mining
+            // The price sheet which shares is zero doesn't mining
             if (tmp > 0) {
 
                 // Currently, mined represents the number of blocks has mined
