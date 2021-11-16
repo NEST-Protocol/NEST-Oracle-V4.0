@@ -2,9 +2,6 @@
 
 pragma solidity ^0.8.6;
 
-import "./lib/IERC20.sol";
-import "./interface/INestMapping.sol";
-import "./interface/INestQuery.sol";
 import "./NestBase.sol";
 
 /// @dev The contract is for nest builtin contract address mapping

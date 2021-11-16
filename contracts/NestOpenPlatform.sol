@@ -4,10 +4,7 @@ pragma solidity ^0.8.6;
 
 import "./lib/TransferHelper.sol";
 import "./interface/INestOpenMining.sol";
-import "./interface/INestQuery.sol";
-import "./interface/INTokenController.sol";
 import "./interface/INestLedger.sol";
-import "./interface/INToken.sol";
 import "./interface/INestPriceView.sol";
 import "./interface/INestOpenPrice.sol";
 

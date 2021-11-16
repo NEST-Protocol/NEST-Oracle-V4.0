@@ -18,13 +18,8 @@ exports.deploy = async function() {
     });
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestLedger = await ethers.getContractFactory('NestLedger');
-    const NestMining = await ethers.getContractFactory('NestMining');
     const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
-    const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const NestVote = await ethers.getContractFactory('NestVote');
-    const NTokenController = await ethers.getContractFactory('NTokenController');
-    const NNIncome = await ethers.getContractFactory('NNIncome');
-    const NestRedeeming = await ethers.getContractFactory('NestRedeeming');
 
     console.log('** 开始部署合约 deploy.proxy.js **');
     
@@ -57,25 +52,25 @@ exports.deploy = async function() {
     //const nestOpenMining = await NestOpenMining.attach('0x0000000000000000000000000000000000000000');
     console.log('nestOpenMining: ' + nestOpenMining.address);
 
-    const nestPriceFacade = await upgrades.deployProxy(NestPriceFacade, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestPriceFacade: ' + nestPriceFacade.address);
+    // const nestPriceFacade = await upgrades.deployProxy(NestPriceFacade, [nestGovernance.address], { initializer: 'initialize' });
+    // //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
+    // console.log('nestPriceFacade: ' + nestPriceFacade.address);
 
     const nestVote = await upgrades.deployProxy(NestVote, [nestGovernance.address], { initializer: 'initialize' });
     //const nestVote = await NestVote.attach('0x0000000000000000000000000000000000000000');
     console.log('nestVote: ' + nestVote.address);
 
-    const nTokenController = await upgrades.deployProxy(NTokenController, [nestGovernance.address], { initializer: 'initialize' });
-    //const nTokenController = await NTokenController.attach('0x0000000000000000000000000000000000000000');
-    console.log('nTokenController: ' + nTokenController.address);
+    // const nTokenController = await upgrades.deployProxy(NTokenController, [nestGovernance.address], { initializer: 'initialize' });
+    // //const nTokenController = await NTokenController.attach('0x0000000000000000000000000000000000000000');
+    // console.log('nTokenController: ' + nTokenController.address);
 
-    const nnIncome = await upgrades.deployProxy(NNIncome, [nestGovernance.address], { initializer: 'initialize' });
-    //const nnIncome = await NNIncome.attach('0x0000000000000000000000000000000000000000');
-    console.log('nnIncome: ' + nnIncome.address);
+    // const nnIncome = await upgrades.deployProxy(NNIncome, [nestGovernance.address], { initializer: 'initialize' });
+    // //const nnIncome = await NNIncome.attach('0x0000000000000000000000000000000000000000');
+    // console.log('nnIncome: ' + nnIncome.address);
 
-    const nestRedeeming = await upgrades.deployProxy(NestRedeeming, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestRedeeming = await NestRedeeming.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestRedeeming: ' + nestRedeeming.address);
+    // const nestRedeeming = await upgrades.deployProxy(NestRedeeming, [nestGovernance.address], { initializer: 'initialize' });
+    // //const nestRedeeming = await NestRedeeming.attach('0x0000000000000000000000000000000000000000');
+    // console.log('nestRedeeming: ' + nestRedeeming.address);
 
     console.log('1. nestGovernance.setBuiltinAddress()');
     await nestGovernance.setBuiltinAddress(
@@ -84,11 +79,11 @@ exports.deploy = async function() {
         nestLedger.address,
         '0x0000000000000000000000000000000000000000', //nestMining.address,
         '0x0000000000000000000000000000000000000000', //nestMining.address,
-        nestPriceFacade.address,
+        '0x0000000000000000000000000000000000000000', //nestPriceFacade.address,
         nestVote.address,
         '0x0000000000000000000000000000000000000000', //nestMining.address,
-        nnIncome.address,
-        nTokenController.address
+        '0x0000000000000000000000000000000000000000', //nnIncome.address,
+        '0x0000000000000000000000000000000000000000'  //nTokenController.address
     );
 
     console.log('2. nestLedger.update()');
@@ -97,16 +92,16 @@ exports.deploy = async function() {
     //await nestMining.update(nestGovernance.address);
     console.log('4. nestOpenMining.update()');
     await nestOpenMining.update(nestGovernance.address);
-    console.log('5. nestPriceFacade.update()');
-    await nestPriceFacade.update(nestGovernance.address);
+    //console.log('5. nestPriceFacade.update()');
+    //await nestPriceFacade.update(nestGovernance.address);
     console.log('6. nestVote.update()');
     await nestVote.update(nestGovernance.address);
-    console.log('7. nTokenController.update()');
-    await nTokenController.update(nestGovernance.address);
-    console.log('8. nnIncome.update()');
-    await nnIncome.update(nestGovernance.address);
-    console.log('9. nestRedeeming.update()');
-    await nestRedeeming.update(nestGovernance.address);
+    //console.log('7. nTokenController.update()');
+    //await nTokenController.update(nestGovernance.address);
+    //console.log('8. nnIncome.update()');
+    // await nnIncome.update(nestGovernance.address);
+    // console.log('9. nestRedeeming.update()');
+    // await nestRedeeming.update(nestGovernance.address);
 
     console.log('10. nestOpenMining.setConfig()');
     await nestOpenMining.setConfig({
@@ -155,10 +150,10 @@ exports.deploy = async function() {
         nestLedger: nestLedger,
         //nestMining: nestMining,
         nestOpenMining: nestOpenMining,
-        nestPriceFacade: nestPriceFacade,
+        //nestPriceFacade: nestPriceFacade,
         nestVote: nestVote,
-        nTokenController: nTokenController,
-        nestRedeeming: nestRedeeming
+        // nTokenController: nTokenController,
+        // nestRedeeming: nestRedeeming
     };
 
     return contracts;

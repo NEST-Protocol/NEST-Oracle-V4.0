@@ -3,7 +3,6 @@
 pragma solidity ^0.8.6;
 
 import "./lib/IERC20.sol";
-import "./interface/INestMining.sol";
 import "./interface/INestVote.sol";
 import "./interface/IVotePropose.sol";
 import "./interface/INestGovernance.sol";
