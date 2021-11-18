@@ -25,25 +25,25 @@ interface INestOpenMining {
     /// @dev Nest mining configuration structure
     struct Config {
         
-        // Eth number of each post. 30
-        // We can stop post and taking orders by set postEthUnit to 0 (closing and withdraw are not affected)
-        uint32 postEthUnit;
+        // // Eth number of each post. 30
+        // // We can stop post and taking orders by set postEthUnit to 0 (closing and withdraw are not affected)
+        // uint32 postEthUnit;
 
-        // Post fee(0.0001eth，DIMI_ETHER). 1000
-        uint16 postFeeUnit;
+        // // Post fee(0.0001eth，DIMI_ETHER). 1000
+        // uint16 postFeeUnit;
 
-        // Proportion of miners digging(10000 based). 8000
-        uint16 minerNestReward;
+        // // Proportion of miners digging(10000 based). 8000
+        // uint16 minerNestReward;
         
-        // The proportion of token dug by miners is only valid for the token created in version 3.0
-        // (10000 based). 9500
-        uint16 minerNTokenReward;
+        // // The proportion of token dug by miners is only valid for the token created in version 3.0
+        // // (10000 based). 9500
+        // uint16 minerNTokenReward;
 
-        // When the circulation of ntoken exceeds this threshold, post() is prohibited(Unit: 10000 ether). 500
-        uint32 doublePostThreshold;
+        // // When the circulation of ntoken exceeds this threshold, post() is prohibited(Unit: 10000 ether). 500
+        // uint32 doublePostThreshold;
         
-        // The limit of ntoken mined blocks. 100
-        uint16 ntokenMinedBlockLimit;
+        // // The limit of ntoken mined blocks. 100
+        // uint16 ntokenMinedBlockLimit;
 
         // -- Public configuration
         // The number of times the sheet assets have doubled. 4

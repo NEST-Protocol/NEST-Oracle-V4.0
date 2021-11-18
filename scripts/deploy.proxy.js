@@ -105,32 +105,32 @@ exports.deploy = async function() {
 
     console.log('10. nestOpenMining.setConfig()');
     await nestOpenMining.setConfig({
-        // Eth number of each post. 30
-        // We can stop post and taking orders by set postEthUnit to 0 (closing and withdraw are not affected)
-        postEthUnit: 30,
+        // // Eth number of each post. 30
+        // // We can stop post and taking orders by set postEthUnit to 0 (closing and withdraw are not affected)
+        // postEthUnit: 30,
 
-        // Post fee(0.0001eth，DIMI_ETHER). 1000
-        postFeeUnit: 1000,
+        // // Post fee(0.0001eth，DIMI_ETHER). 1000
+        // postFeeUnit: 1000,
 
-        // Proportion of miners digging(10000 based). 8000
-        minerNestReward: 8000,
+        // // Proportion of miners digging(10000 based). 8000
+        // minerNestReward: 8000,
         
-        // The proportion of token dug by miners is only valid for the token created in version 3.0
-        // (10000 based). 9500
-        minerNTokenReward: 9500,
+        // // The proportion of token dug by miners is only valid for the token created in version 3.0
+        // // (10000 based). 9500
+        // minerNTokenReward: 9500,
 
-        // When the circulation of ntoken exceeds this threshold, post() is prohibited(Unit: 10000 ether). 500
-        doublePostThreshold: 500,
+        // // When the circulation of ntoken exceeds this threshold, post() is prohibited(Unit: 10000 ether). 500
+        // doublePostThreshold: 500,
         
-        // The limit of ntoken mined blocks. 100
-        ntokenMinedBlockLimit: 100,
+        // // The limit of ntoken mined blocks. 100
+        // ntokenMinedBlockLimit: 100,
 
         // -- Public configuration
         // The number of times the sheet assets have doubled. 4
         maxBiteNestedLevel: 4,
         
         // Price effective block interval. 20
-        priceEffectSpan: 20,
+        priceEffectSpan: 50,
 
         // The amount of nest to pledge for each post (Unit: 1000). 100
         pledgeNest: 100

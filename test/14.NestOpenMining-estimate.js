@@ -127,6 +127,8 @@ describe('NestOpenMining', function() {
 
         const GASLIMIT = 400000n;
         const POSTFEE = 0.1;
+        const OPEN_FEE = 0;
+        const EFFECT_BLOCK = 50;
 
         let prev = BigInt(await nestOpenMining.balanceOf(nhbtc.address, owner.address));
         for (var i = 0; i < 10; ++i) {
@@ -139,7 +141,7 @@ describe('NestOpenMining', function() {
                 await showReceipt(receipt);
                 let status = await showStatus();
 
-                await skipBlocks(20);
+                await skipBlocks(EFFECT_BLOCK);
                 console.log('(i << 1): ' + (i << 1))
                 await nestOpenMining.close(0, [0 + (i << 1)]);
                 let now = BigInt(await nestOpenMining.balanceOf(nhbtc.address, owner.address));
@@ -161,7 +163,7 @@ describe('NestOpenMining', function() {
                 await showReceipt(receipt);
                 let status = await showStatus();
 
-                await skipBlocks(21);
+                await skipBlocks(EFFECT_BLOCK + 1);
                 await nestOpenMining.close(0, [1 + (i << 1)]);
                 let now = BigInt(await nestOpenMining.balanceOf(nhbtc.address, owner.address));
                 let mi = now - prev;

@@ -119,7 +119,7 @@ exports.deploy = async function() {
     //     postEthUnit: 30,
 
     //     // Post fee(0.0001eth，DIMI_ETHER). 1000
-    //     postFeeUnit: 1000,
+    //     postFeeUnit: 100,
 
     //     // Proportion of miners digging(10000 based). 8000
     //     minerNestReward: 8000,
@@ -151,6 +151,7 @@ exports.deploy = async function() {
     console.log('---------- OK ----------');
     
     const contracts = {
+        eth: eth,
         nest: nest,
         usdt: usdt,
         hbtc: hbtc,

@@ -105,7 +105,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
         // 每个区块的标准出矿量
         uint96 rewardPerBlock;
 
-        // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
         // 出矿代币地址
         address reward;
         // 矿币总量
@@ -153,7 +152,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
     mapping(address=>uint) _accountMapping;
 
     // 报价通道映射，通过此映射避免重复添加报价通道
-    mapping(uint=>uint) _channelMapping;
+    //mapping(uint=>uint) _channelMapping;
 
     // 报价通道
     PriceChannel[] _channels;
@@ -162,7 +161,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
     uint constant DIMI_ETHER = 0.0001 ether;
 
     // Ethereum average block time interval, 14 seconds
-    uint constant ETHEREUM_BLOCK_TIMESPAN = 14;
+    uint constant ETHEREUM_BLOCK_TIMESPAN = 3;
 
     /* ========== Governance ========== */
 
@@ -187,8 +186,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
         address reward = config.reward;
 
         // 限制同一个报价对重复开通
-        uint key = uint(keccak256(abi.encodePacked(token0, token1)));
-        require(_channelMapping[key] == 0, "NOM:exists");
+        //uint key = uint(keccak256(abi.encodePacked(token0, token1)));
+        //require(_channelMapping[key] == 0, "NOM:exists");
 
         require(token0 != token1, "NOM:token0 can't equal token1");
         emit Open(_channels.length, token0, config.unit, token1, reward);
@@ -209,7 +208,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
         // 衰减系数，万分制。8000
         channel.reductionRate = config.reductionRate;
 
-        _channelMapping[key] = _channels.length;
+        //_channelMapping[key] = _channels.length;
 
         // 测试token地址是否可以正常转账
         if (token0 != address(0)) {
@@ -229,8 +228,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
             TransferHelper.safeTransfer(reward, msg.sender, 1);
         }
 
-        // TODO: 收取的NEST到哪里去?
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), 1000 ether);
+        // // TODO: 收取的NEST到哪里去?
+        // TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), 1000 ether);
     }
 
     /// @dev 向报价通道注入矿币
@@ -813,7 +812,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
         uint height = 0;
 
         // Traverse the sheets to find the effective price
-        uint effectBlock = block.number - uint(config.priceEffectSpan);
+        //uint effectBlock = block.number - uint(config.priceEffectSpan);
         PriceSheet memory sheet;
         for (; ; ++index) {
 
@@ -829,7 +828,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
             // is not considered
 
             // Traverse the sheets that has reached the effective interval from the current position
-            bool flag = index >= length || (height = uint((sheet = sheets[index]).height)) >= effectBlock;
+            bool flag = index >= length
+                || (height = uint((sheet = sheets[index]).height)) + uint(config.priceEffectSpan) >= block.number;
 
             // Not the same block (or flag is false), calculate the price and update it
             if (flag || prev != height) {
@@ -1163,7 +1163,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
     // }
 
     function _reduction(uint delta, uint reductionRate) private pure returns (uint) {
-        // TODO: 实现衰减参数算法
         if (delta < NEST_REDUCTION_LIMIT) {
             uint n = delta / NEST_REDUCTION_SPAN;
             return 400 * reductionRate ** n / 10000 ** n;
@@ -1338,7 +1337,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceSheet memory sheet;
 
         uint priceEffectSpan = uint(_config.priceEffectSpan);
-        uint h = block.number - priceEffectSpan;
+        //uint h = block.number - priceEffectSpan;
         uint index = sheets.length;
         uint totalEthNum = 0;
         uint totalTokenValue = 0;
@@ -1348,7 +1347,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
             bool flag = index == 0;
             if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height <= h) {
+                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
                     return (height + priceEffectSpan, totalTokenValue / totalEthNum);
                 }
                 if (flag) {
@@ -1378,7 +1377,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
         uint[] memory array = new uint[](count <<= 1);
 
         uint priceEffectSpan = uint(_config.priceEffectSpan);
-        uint h = block.number - priceEffectSpan;
+        //uint h = block.number - priceEffectSpan;
         uint index = sheets.length;
         uint totalEthNum = 0;
         uint totalTokenValue = 0;
@@ -1388,7 +1387,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
             bool flag = index == 0;
             if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height <= h) {
+                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
                     array[i++] = height + priceEffectSpan;
                     array[i++] = totalTokenValue / totalEthNum;
                 }
