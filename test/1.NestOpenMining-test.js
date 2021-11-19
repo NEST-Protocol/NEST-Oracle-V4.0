@@ -161,7 +161,7 @@ describe('NestOpenMining', function() {
                 
                 let rewards = await nestOpenMining.totalETHRewards(0);
                 console.log('rewards: ' + toDecimal(rewards));
-                await nestOpenMining.pay(0, '0x0000000000000000000000000000000000000000', addr1.address, toBigInt(0.1));
+                await nestOpenMining.pay(0, addr1.address, toBigInt(0.1));
                 console.log(await getStatus());
                 rewards = await nestOpenMining.totalETHRewards(0);
                 console.log('rewards: ' + toDecimal(rewards));

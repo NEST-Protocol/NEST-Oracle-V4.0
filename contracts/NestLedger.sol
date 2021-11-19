@@ -20,30 +20,11 @@ contract NestLedger is NestBase, INestLedger {
         uint value;
     }
 
-    // Configuration
-    Config _config;
-
-    // nest ledger
-    uint _nestLedger;
-
-    // ntoken ledger
-    mapping(address=>UINT) _ntokenLedger;
+    // ntoken ledger. channelId=>value
+    mapping(uint=>UINT) _ntokenLedger;
 
     // DAO applications
     mapping(address=>uint) _applications;
-
-    /// @dev Modify configuration
-    /// @param config Configuration object
-    function setConfig(Config calldata config) external override onlyGovernance {
-        require(uint(config.nestRewardScale) <= 10000, "NestLedger:!value");
-        _config = config;
-    }
-
-    /// @dev Get configuration
-    /// @return Configuration object
-    function getConfig() external view override returns (Config memory) {
-        return _config;
-    }
 
     /// @dev Set DAO application
     /// @param addr DAO application contract address
@@ -60,74 +41,32 @@ contract NestLedger is NestBase, INestLedger {
         return _applications[addr];
     }
 
-    /// @dev Carve reward
-    /// @param ntokenAddress Destination ntoken address
-    function carveETHReward(address ntokenAddress) external payable override {
-
-        // nest not carve
-        if (ntokenAddress == NEST_TOKEN_ADDRESS) {
-            _nestLedger += msg.value;
-        }
-        // ntoken need carve
-        else {
-
-            Config memory config = _config;
-            UINT storage balance = _ntokenLedger[ntokenAddress];
-
-            // Calculate nest reward
-            uint nestReward = msg.value * uint(config.nestRewardScale) / 10000;
-            // The part of ntoken is msg.value - nestReward
-            balance.value += msg.value - nestReward;
-            // nest reward
-            _nestLedger += nestReward;
-        }
-    }
-
     /// @dev Add reward
-    /// @param ntokenAddress Destination ntoken address
-    function addETHReward(address ntokenAddress) external payable override {
-
-        // Ledger for nest is independent
-        if (ntokenAddress == NEST_TOKEN_ADDRESS) {
-            _nestLedger += msg.value;
-        }
-        // Ledger for ntoken is in a mapping
-        else {
-            UINT storage balance = _ntokenLedger[ntokenAddress];
-            balance.value += msg.value;
-        }
+    /// @param channelId 报价通道
+    function addETHReward(uint channelId) external payable override {
+        UINT storage balance = _ntokenLedger[channelId];
+        balance.value += msg.value;
     }
 
     /// @dev The function returns eth rewards of specified ntoken
-    /// @param ntokenAddress The ntoken address
-    function totalETHRewards(address ntokenAddress) external view override returns (uint) {
-
-        if (ntokenAddress == NEST_TOKEN_ADDRESS) {
-            return _nestLedger;
-        }
-        return _ntokenLedger[ntokenAddress].value;
+    /// @param channelId 报价通道
+    function totalETHRewards(uint channelId) external view override returns (uint) {
+        return _ntokenLedger[channelId].value;
     }
 
     /// @dev Pay
-    /// @param ntokenAddress Destination ntoken address. Indicates which ntoken to pay with
+    /// @param channelId 报价通道
     /// @param tokenAddress Token address of receiving funds (0 means ETH)
     /// @param to Address to receive
     /// @param value Amount to receive
-    function pay(address ntokenAddress, address tokenAddress, address to, uint value) external override {
+    function pay(uint channelId, address tokenAddress, address to, uint value) external override {
 
         require(_applications[msg.sender] == 1, "NestLedger:!app");
 
         // Pay eth from ledger
         if (tokenAddress == address(0)) {
-            // nest ledger
-            if (ntokenAddress == NEST_TOKEN_ADDRESS) {
-                _nestLedger -= value;
-            }
-            // ntoken ledger
-            else {
-                UINT storage balance = _ntokenLedger[ntokenAddress];
-                balance.value -= value;
-            }
+            UINT storage balance = _ntokenLedger[channelId];
+            balance.value -= value;
             // pay
             payable(to).transfer(value);
         }
@@ -137,45 +76,4 @@ contract NestLedger is NestBase, INestLedger {
             TransferHelper.safeTransfer(tokenAddress, to, value);
         }
     }
-
-    /// @dev Settlement
-    /// @param ntokenAddress Destination ntoken address. Indicates which ntoken to settle with
-    /// @param tokenAddress Token address of receiving funds (0 means ETH)
-    /// @param to Address to receive
-    /// @param value Amount to receive
-    function settle(address ntokenAddress, address tokenAddress, address to, uint value) external payable override {
-
-        require(_applications[msg.sender] == 1, "NestLedger:!app");
-
-        // Pay eth from ledger
-        if (tokenAddress == address(0)) {
-            // nest ledger
-            if (ntokenAddress == NEST_TOKEN_ADDRESS) {
-                // If msg.value is not 0, add to ledger
-                _nestLedger = _nestLedger + msg.value - value;
-            }
-            // ntoken ledger
-            else {
-                // If msg.value is not 0, add to ledger
-                UINT storage balance = _ntokenLedger[ntokenAddress];
-                balance.value = balance.value + msg.value - value;
-            }
-            // pay
-            payable(to).transfer(value);
-        }
-        // Pay token
-        else {
-            // If msg.value is not 0, add to ledger
-            if (msg.value > 0) {
-                if (ntokenAddress == NEST_TOKEN_ADDRESS) {
-                    _nestLedger += msg.value;
-                } else {
-                    UINT storage balance = _ntokenLedger[ntokenAddress];
-                    balance.value += msg.value;
-                }
-            }
-            // pay
-            TransferHelper.safeTransfer(tokenAddress, to, value);
-        }
-    } 
 }

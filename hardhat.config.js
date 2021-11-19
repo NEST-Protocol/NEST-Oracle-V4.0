@@ -57,11 +57,18 @@ module.exports = {
       gasPrice:1e9,
       timeout: 2000000000
     },
-    bsc: {
+    bsc_test: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
       gasPrice: 20000000000,
-      accounts: [config.account.rinkeby.key, config.account.rinkeby.userA, config.account.rinkeby.userB],
+      accounts: [config.account.bsc_test.key, config.account.bsc_test.userA, config.account.bsc_test.userB],
+      timeout: 2000000000
+    },
+    bsc_main: {
+      url: "https://bsc-dataseed1.defibit.io/",
+      chainId: 56,
+      gasPrice: 5e9,
+      accounts: [config.account.bsc_main.key, config.account.bsc_main.userA, config.account.bsc_main.userB],
       timeout: 2000000000
     },
     hardhat: {

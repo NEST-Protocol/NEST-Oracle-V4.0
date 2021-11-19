@@ -264,8 +264,12 @@ interface INestOpenMining {
 
     /// @dev Pay
     /// @param channelId 报价通道编号
-    /// @param tokenAddress Token address of receiving funds (0 means ETH)
     /// @param to Address to receive
     /// @param value Amount to receive
-    function pay(uint channelId, address tokenAddress, address to, uint value) external;
+    function pay(uint channelId, address to, uint value) external;
+
+    /// @dev 向DAO捐赠
+    /// @param channelId 报价通道
+    /// @param value Amount to receive
+    function donate(uint channelId, uint value) external;
 }

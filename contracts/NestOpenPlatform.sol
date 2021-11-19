@@ -3,14 +3,11 @@
 pragma solidity ^0.8.6;
 
 import "./lib/TransferHelper.sol";
-import "./interface/INestOpenMining.sol";
-import "./interface/INestLedger.sol";
+
 import "./interface/INestPriceView.sol";
 import "./interface/INestOpenPrice.sol";
 
 import "./NestOpenMining.sol";
-
-import "hardhat/console.sol";
 
 /// @dev This contract implemented the mining logic of nest
 contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {

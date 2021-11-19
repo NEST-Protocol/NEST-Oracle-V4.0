@@ -10,8 +10,8 @@ import "./interface/INestLedger.sol";
 contract NestBase {
 
     // Address of nest token contract
-    //address constant NEST_TOKEN_ADDRESS = 0x04abEdA201850aC0124161F037Efd70c74ddC74C;
-    address NEST_TOKEN_ADDRESS;
+    address constant NEST_TOKEN_ADDRESS = 0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7;
+    //address NEST_TOKEN_ADDRESS;
 
     // Genesis block number of nest
     // NEST token contract is created at block height 6913517. However, because the mining algorithm of nest1.0
@@ -41,7 +41,7 @@ contract NestBase {
         require(governance == msg.sender || INestGovernance(governance).checkGovernance(msg.sender, 0), "NEST:!gov");
         _governance = nestGovernanceAddress;
 
-        NEST_TOKEN_ADDRESS = INestGovernance(nestGovernanceAddress).getNestTokenAddress();
+        //NEST_TOKEN_ADDRESS = INestGovernance(nestGovernanceAddress).getNestTokenAddress();
     }
 
     /// @dev Migrate funds from current contract to NestLedger
@@ -51,7 +51,7 @@ contract NestBase {
 
         address to = INestGovernance(_governance).getNestLedgerAddress();
         if (tokenAddress == address(0)) {
-            INestLedger(to).addETHReward { value: value } (address(0));
+            INestLedger(to).addETHReward { value: value } (0);
         } else {
             TransferHelper.safeTransfer(tokenAddress, to, value);
         }

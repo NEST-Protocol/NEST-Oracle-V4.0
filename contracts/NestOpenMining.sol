@@ -6,11 +6,10 @@ import "./lib/IERC20.sol";
 import "./lib/TransferHelper.sol";
 
 import "./interface/INestOpenMining.sol";
+import "./interface/INestLedger.sol";
 import "./interface/INToken.sol";
 
 import "./NestBase.sol";
-
-import "hardhat/console.sol";
 
 /// @dev This contract implemented the mining logic of nest
 contract NestOpenMining is NestBase, INestOpenMining {
@@ -120,9 +119,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
         uint16 singleFee;
         // 衰减系数，万分制。8000
         uint16 reductionRate;
-
-        // TODO: 抵押代币也需要可以设置，不一定用NEST
-        // TODO：确定抵押代币是全局设置，还是单独设置
     }
 
     /// @dev Structure is used to represent a storage location. Storage variable can be used to avoid indexing 
@@ -221,15 +217,11 @@ contract NestOpenMining is NestBase, INestOpenMining {
             require(IERC20(token1).balanceOf(address(this)) >= 1, "NOM:token1 error");
             TransferHelper.safeTransfer(token1, msg.sender, 1);
         }
-        // TODO: 考虑到ntoken挖矿，可以不检查
         if (reward != address(0)) {
             TransferHelper.safeTransferFrom(reward, msg.sender, address(this), 1);
             require(IERC20(reward).balanceOf(address(this)) >= 1, "NOM:reward error");
             TransferHelper.safeTransfer(reward, msg.sender, 1);
         }
-
-        // // TODO: 收取的NEST到哪里去?
-        // TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), 1000 ether);
     }
 
     /// @dev 向报价通道注入矿币
@@ -246,14 +238,14 @@ contract NestOpenMining is NestBase, INestOpenMining {
         channel.vault += vault;
     }
 
-    /// @dev 向报价通道注入NToken矿币
-    /// @param channelId 报价通道
-    /// @param vault 注入矿币数量
-    function increaseNToken(uint channelId, uint96 vault) external onlyGovernance {
-        PriceChannel storage channel = _channels[channelId];
-        INToken(channel.reward).increaseTotal(vault);
-        channel.vault += vault;
-    }
+    // /// @dev 向报价通道注入NToken矿币
+    // /// @param channelId 报价通道
+    // /// @param vault 注入矿币数量
+    // function increaseNToken(uint channelId, uint96 vault) external onlyGovernance {
+    //     PriceChannel storage channel = _channels[channelId];
+    //     INToken(channel.reward).increaseTotal(vault);
+    //     channel.vault += vault;
+    // }
 
     /// @dev 修改治理权限地址
     /// @param channelId 报价通道
@@ -699,25 +691,26 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
     /// @dev Pay
     /// @param channelId 报价通道编号
-    /// @param tokenAddress Token address of receiving funds (0 means ETH)
     /// @param to Address to receive
     /// @param value Amount to receive
-    function pay(uint channelId, address tokenAddress, address to, uint value) external override {
+    function pay(uint channelId, address to, uint value) external override {
 
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:!governance");
         channel.feeInfo -= value;
+        // pay
+        payable(to).transfer(value);
+    }
 
-        // Pay eth from ledger
-        if (tokenAddress == address(0)) {
-            // pay
-            payable(to).transfer(value);
-        }
-        // Pay token
-        else {
-            // pay
-            TransferHelper.safeTransfer(tokenAddress, to, value);
-        }
+    /// @dev 向DAO捐赠
+    /// @param channelId 报价通道
+    /// @param value Amount to receive
+    function donate(uint channelId, uint value) external override {
+
+        PriceChannel storage channel = _channels[channelId];
+        require(channel.governance == msg.sender, "NOM:!governance");
+        channel.feeInfo -= value;
+        INestLedger(INestMapping(_governance).getNestLedgerAddress()).addETHReward { value: value } (channelId);
     }
 
     /// @dev Gets the address corresponding to the given index number
@@ -946,7 +939,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
                 // Currently, mined represents the number of blocks has mined
                 (uint mined, uint totalShares) = _calcMinedBlocks(sheets, index, sheet);
-                // TODO: 出矿逻辑
+                // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
+                // 这种情况是不合理的，需要由开通者负责
                 value.ntokenValue = uint96(
                     mined
                     * tmp
