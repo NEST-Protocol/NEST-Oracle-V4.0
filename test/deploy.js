@@ -19,9 +19,9 @@ describe('NestOpenMining', function() {
         // TODO：执行开通逻辑需要切换账号
         return;
 
-        await nest.approve(nestOpenMining.address, toBigInt(100000000));
-        await pusd.approve(nestOpenMining.address, toBigInt(100000000));
-        await peth.approve(nestOpenMining.address, toBigInt(100000000));
+        await nest.approve(nestOpenMining.address, toBigInt(1000000000));
+        await pusd.approve(nestOpenMining.address, toBigInt(1000000000));
+        await peth.approve(nestOpenMining.address, toBigInt(1000000000));
 
         await nestOpenMining.open({
             // 计价代币地址, 0表示eth
