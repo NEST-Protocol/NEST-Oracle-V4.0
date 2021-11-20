@@ -181,10 +181,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
         address token1 = config.token1;
         address reward = config.reward;
 
-        // 限制同一个报价对重复开通
-        //uint key = uint(keccak256(abi.encodePacked(token0, token1)));
-        //require(_channelMapping[key] == 0, "NOM:exists");
-
         require(token0 != token1, "NOM:token0 can't equal token1");
         emit Open(_channels.length, token0, config.unit, token1, reward);
         PriceChannel storage channel = _channels.push();
@@ -203,25 +199,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
         channel.singleFee = config.singleFee;
         // 衰减系数，万分制。8000
         channel.reductionRate = config.reductionRate;
-
-        //_channelMapping[key] = _channels.length;
-
-        // 测试token地址是否可以正常转账
-        if (token0 != address(0)) {
-            TransferHelper.safeTransferFrom(token0, msg.sender, address(this), 1);
-            require(IERC20(token0).balanceOf(address(this)) >= 1, "NOM:token0 error");
-            TransferHelper.safeTransfer(token0, msg.sender, 1);
-        }
-        if (token1 != address(0)) {
-            TransferHelper.safeTransferFrom(token1, msg.sender, address(this), 1);
-            require(IERC20(token1).balanceOf(address(this)) >= 1, "NOM:token1 error");
-            TransferHelper.safeTransfer(token1, msg.sender, 1);
-        }
-        if (reward != address(0)) {
-            TransferHelper.safeTransferFrom(reward, msg.sender, address(this), 1);
-            require(IERC20(reward).balanceOf(address(this)) >= 1, "NOM:reward error");
-            TransferHelper.safeTransfer(reward, msg.sender, 1);
-        }
     }
 
     /// @dev 向报价通道注入矿币

@@ -25,12 +25,10 @@ exports.deploy = async function() {
     const nest = await TestERC20.attach('0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7');
     console.log('nest: ' + nest.address);
 
-    // TODO: 确定跨链PUSD地址
     //const pusd = await TestERC20.deploy('USDT', 'USDT', 18);
     const pusd = await TestERC20.attach('0x9b2689525e07406D8A6fB1C40a1b86D2cd34Cbb2');
     console.log('pusd: ' + pusd.address);
 
-    // TODO: 确定跨链PETH地址
     //const peth = await TestERC20.deploy('HBTC', 'HBTC', 18);
     const peth = await TestERC20.attach('0x556d8bF8bF7EaAF2626da679Aa684Bac347d30bB');
     console.log('peth: ' + peth.address);
