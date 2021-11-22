@@ -215,6 +215,20 @@ contract NestOpenMining is NestBase, INestOpenMining {
         channel.vault += vault;
     }
 
+    /// @dev 从报价通道取出矿币
+    /// @param channelId 报价通道
+    /// @param vault 注入矿币数量
+    function decrease(uint channelId, uint96 vault) external payable override {
+        PriceChannel storage channel = _channels[channelId];
+        address reward = channel.reward;
+        if (reward == address(0)) {
+            payable(msg.sender).transfer(vault);
+        } else {
+            TransferHelper.safeTransfer(reward, msg.sender, vault);
+        }
+        channel.vault -= vault;
+    }
+
     // /// @dev 向报价通道注入NToken矿币
     // /// @param channelId 报价通道
     // /// @param vault 注入矿币数量

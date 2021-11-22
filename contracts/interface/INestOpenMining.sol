@@ -186,6 +186,11 @@ interface INestOpenMining {
     /// @param vault 注入矿币数量
     function increase(uint channelId, uint96 vault) external payable;
 
+    /// @dev 从报价通道取出矿币
+    /// @param channelId 报价通道
+    /// @param vault 注入矿币数量
+    function decrease(uint channelId, uint96 vault) external payable;
+
     /// @dev 获取报价通道信息
     /// @param channelId 报价通道
     /// @return 报价通道信息
