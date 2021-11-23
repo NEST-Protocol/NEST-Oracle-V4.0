@@ -732,7 +732,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
             // Index number
             uint32(index),
             // Miner address
-            _indexAddress(sheet.miner),
+            indexAddress(sheet.miner),
             // The block number of this price sheet packaged
             sheet.height,
             // The remain number of this price sheet
@@ -1073,7 +1073,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
     ) private {
         if (tokenValue > 0) {
             if (tokenAddress == address(0)) {
-                payable(_indexAddress(accountIndex)).transfer(tokenValue);
+                payable(indexAddress(accountIndex)).transfer(tokenValue);
             } else {
                 balances[tokenAddress].value += tokenValue;
             }
@@ -1095,12 +1095,12 @@ contract NestOpenMining is NestBase, INestOpenMining {
         }
     }
 
-    /// @dev Gets the address corresponding to the given index number
-    /// @param index The index number of the specified address
-    /// @return The address corresponding to the given index number
-    function _indexAddress(uint index) public view returns (address) {
-        return _accounts[index].addr;
-    }
+    // /// @dev Gets the address corresponding to the given index number
+    // /// @param index The index number of the specified address
+    // /// @return The address corresponding to the given index number
+    // function _indexAddress(uint index) public view returns (address) {
+    //     return _accounts[index].addr;
+    // }
 
     /// @dev Gets the index number of the specified address. If it does not exist, register
     /// @param addr Destination address
