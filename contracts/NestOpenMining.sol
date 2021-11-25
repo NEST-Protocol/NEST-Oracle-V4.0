@@ -217,8 +217,8 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
     /// @dev 从报价通道取出矿币
     /// @param channelId 报价通道
-    /// @param vault 注入矿币数量
-    function decrease(uint channelId, uint96 vault) external payable override {
+    /// @param vault 取出矿币数量
+    function decrease(uint channelId, uint96 vault) external override {
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:not governance");
         address reward = channel.reward;

@@ -14,10 +14,14 @@ describe('NestOpenMining', function() {
         } = await deploy();
         
         console.log('ok');
+        const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
 
+        const newNestOpenMining = await NestOpenMining.deploy();
+        console.log('newNestOpenMining: ' + newNestOpenMining.address);
+        return;
         // return后面是开通报价通道的逻辑，先不执行
         // TODO：执行开通逻辑需要切换账号
-
+        //const TestERC20 = await ethers.getContractFactory('TestERC20');
         //await pusd.approve(nestOpenMining.address, toBigInt(1000000000));
         //await peth.approve(nestOpenMining.address, toBigInt(1000000000));
 
@@ -28,9 +32,9 @@ describe('NestOpenMining', function() {
         //     unit: toBigInt(2000),
             
         //     // 报价代币地址，0表示eth
-        //     token1: peth.address,
+        //     token1: nest.address,
         //     // 每个区块的标准出矿量
-        //     rewardPerBlock: toBigInt(4),
+        //     rewardPerBlock: toBigInt(1),
             
         //     // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
         //     // 出矿代币地址
@@ -50,7 +54,10 @@ describe('NestOpenMining', function() {
         //     reductionRate: 8000
         // });
 
-        // await nest.approve(nestOpenMining.address, toBigInt(100000000));
-        //await nestOpenMining.increase(0, toBigInt(100000000));
+        //await nest.approve(nestOpenMining.address, toBigInt(20000000));
+        //await nestOpenMining.increase(1, toBigInt(20000000));
+        //console.log(await nest.balanceOf(owner.address) + 'nest');
+
+        await nestGovernance.setGovernance('0x688f016CeDD62AD1d8dFA4aBcf3762ab29294489', 1);
     });
 });

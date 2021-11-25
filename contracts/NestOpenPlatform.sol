@@ -113,7 +113,8 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
 
         fee = fee * DIMI_ETHER;
         if (msg.value > fee) {
-            payable(payback).transfer(msg.value - fee);
+            //payable(payback).transfer(msg.value - fee);
+            TransferHelper.safeTransferETH(payback, msg.value - fee);
         } else {
             require(msg.value == fee, "NOP:!fee");
         }
