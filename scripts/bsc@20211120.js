@@ -23,6 +23,7 @@ exports.deploy = async function() {
     // nestGovernance: 0x7b5ee1Dc65E2f3EDf41c798e7bd3C22283C3D4bb
     // nestLedger: 0x7DBe94A4D6530F411A1E7337c7eb84185c4396e6
     // nestOpenMining: 0x09CE0e021195BA2c1CDE62A8B187abf810951540
+    // proxyAdmin: 0x91acf819AC1c4f47C9298fC1D50F8561aC9Bb26E
 
     // 1. 部署依赖合约
     //const nest = await IBNEST.deploy();
