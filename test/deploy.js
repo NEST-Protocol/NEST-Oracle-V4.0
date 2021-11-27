@@ -14,10 +14,10 @@ describe('NestOpenMining', function() {
         } = await deploy();
         
         console.log('ok');
-        const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
+        // const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
 
-        const newNestOpenMining = await NestOpenMining.deploy();
-        console.log('newNestOpenMining: ' + newNestOpenMining.address);
+        // const newNestOpenMining = await NestOpenMining.deploy();
+        // console.log('newNestOpenMining: ' + newNestOpenMining.address);
 
         
         // await nestOpenMining.open({
@@ -49,8 +49,8 @@ describe('NestOpenMining', function() {
         //     reductionRate: 8000
         // });
 
-        // await nest.approve(nestOpenMining.address, toBigInt(20000000));
-        // await nestOpenMining.increase(1, toBigInt(20000000));
-        // //console.log(await nest.balanceOf(owner.address) + 'nest');
+        await nest.approve(nestOpenMining.address, toBigInt(20000000));
+        await nestOpenMining.increase(1, toBigInt(20000000));
+        //console.log(await nest.balanceOf(owner.address) + 'nest');
     });
 });
