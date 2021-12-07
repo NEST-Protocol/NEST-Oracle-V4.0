@@ -19,6 +19,7 @@ exports.deploy = async function() {
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestLedger = await ethers.getContractFactory('NestLedger');
     const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
+    const NestBatchMining = await ethers.getContractFactory('NestBatchMining');
     const NestVote = await ethers.getContractFactory('NestVote');
 
     console.log('** 开始部署合约 deploy.proxy.js **');
@@ -31,6 +32,14 @@ exports.deploy = async function() {
     const usdt = await TestERC20.deploy('USDT', 'USDT', 18);
     //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('usdt: ' + usdt.address);
+
+    const usdc = await TestERC20.deploy('USDC', 'USDC', 18);
+    //const usdc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    console.log('usdc: ' + usdc.address);
+
+    const cofi = await TestERC20.deploy('COFI', 'COFI', 18);
+    //const cofi = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    console.log('cofi: ' + cofi.address);
 
     const hbtc = await TestERC20.deploy('HBTC', 'HBTC', 18);
     //const hbtc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
@@ -51,6 +60,10 @@ exports.deploy = async function() {
     const nestOpenMining = await upgrades.deployProxy(NestOpenMining, [nestGovernance.address], { initializer: 'initialize' });
     //const nestOpenMining = await NestOpenMining.attach('0x0000000000000000000000000000000000000000');
     console.log('nestOpenMining: ' + nestOpenMining.address);
+
+    const nestBatchMining = await upgrades.deployProxy(NestBatchMining, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestBatchMining = await NestBatchMining.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestBatchMining: ' + nestBatchMining.address);
 
     // const nestPriceFacade = await upgrades.deployProxy(NestPriceFacade, [nestGovernance.address], { initializer: 'initialize' });
     // //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
@@ -92,6 +105,10 @@ exports.deploy = async function() {
     //await nestMining.update(nestGovernance.address);
     console.log('4. nestOpenMining.update()');
     await nestOpenMining.update(nestGovernance.address);
+
+    console.log('5. nestBatchMining.update()');
+    await nestBatchMining.update(nestGovernance.address);
+
     //console.log('5. nestPriceFacade.update()');
     //await nestPriceFacade.update(nestGovernance.address);
     console.log('6. nestVote.update()');
@@ -105,26 +122,19 @@ exports.deploy = async function() {
 
     console.log('10. nestOpenMining.setConfig()');
     await nestOpenMining.setConfig({
-        // // Eth number of each post. 30
-        // // We can stop post and taking orders by set postEthUnit to 0 (closing and withdraw are not affected)
-        // postEthUnit: 30,
-
-        // // Post fee(0.0001eth，DIMI_ETHER). 1000
-        // postFeeUnit: 1000,
-
-        // // Proportion of miners digging(10000 based). 8000
-        // minerNestReward: 8000,
+        // -- Public configuration
+        // The number of times the sheet assets have doubled. 4
+        maxBiteNestedLevel: 4,
         
-        // // The proportion of token dug by miners is only valid for the token created in version 3.0
-        // // (10000 based). 9500
-        // minerNTokenReward: 9500,
+        // Price effective block interval. 20
+        priceEffectSpan: 50,
 
-        // // When the circulation of ntoken exceeds this threshold, post() is prohibited(Unit: 10000 ether). 500
-        // doublePostThreshold: 500,
-        
-        // // The limit of ntoken mined blocks. 100
-        // ntokenMinedBlockLimit: 100,
+        // The amount of nest to pledge for each post (Unit: 1000). 100
+        pledgeNest: 100
+    });
 
+    console.log('11. nestBatchMining.setConfig()');
+    await nestBatchMining.setConfig({
         // -- Public configuration
         // The number of times the sheet assets have doubled. 4
         maxBiteNestedLevel: 4,
@@ -145,11 +155,14 @@ exports.deploy = async function() {
         nest: nest,
         usdt: usdt,
         hbtc: hbtc,
+        usdc: usdc,
+        cofi: cofi,
 
         nestGovernance: nestGovernance,
         nestLedger: nestLedger,
         //nestMining: nestMining,
         nestOpenMining: nestOpenMining,
+        nestBatchMining: nestBatchMining,
         //nestPriceFacade: nestPriceFacade,
         nestVote: nestVote,
         // nTokenController: nTokenController,
