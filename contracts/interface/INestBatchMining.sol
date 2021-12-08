@@ -138,7 +138,7 @@ interface INestBatchMining {
         // The information of mining fee
         // Low 128-bits represent fee per post
         // High 128-bits represent the current counter of no fee sheets (including settled)
-        uint fee;
+        uint rewards;
 
         // 计价代币地址, 0表示eth
         address token0;
@@ -245,15 +245,14 @@ interface INestBatchMining {
     /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
     /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
     /// @param channelId 报价通道编号
-    /// @param pairIndices 报价对编号数组
-    /// @param indices A list of indices of sheets w.r.t. `token`
-    function close(uint channelId, uint[] calldata pairIndices, uint[] calldata indices) external;
+    /// @param indices 报价单二维数组，外层对应通道号，内层对应报价单号，如果仅关闭后面的报价对，则前面的报价对数组传空数组
+    function close(uint channelId, uint[][] calldata indices) external;
 
-    /// @dev The function updates the statistics of price sheets
-    ///     It calculates from priceInfo to the newest that is effective.
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
-    function stat(uint channelId, uint pairIndex) external;
+    // /// @dev The function updates the statistics of price sheets
+    // ///     It calculates from priceInfo to the newest that is effective.
+    // /// @param channelId 报价通道编号
+    // /// @param pairIndex 报价对编号
+    // function stat(uint channelId, uint pairIndex) external;
 
     /// @dev View the number of assets specified by the user
     /// @param tokenAddress Destination token address
@@ -268,19 +267,16 @@ interface INestBatchMining {
 
     /// @dev Estimated mining amount
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
     /// @return Estimated mining amount
-    function estimate(uint channelId, uint pairIndex) external view returns (uint);
+    function estimate(uint channelId) external view returns (uint);
 
     /// @dev Query the quantity of the target quotation
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
     /// @param index The index of the sheet
     /// @return minedBlocks Mined block period from previous block
     /// @return totalShares Total shares of sheets in the block
     function getMinedBlocks(
         uint channelId,
-        uint pairIndex,
         uint index
     ) external view returns (uint minedBlocks, uint totalShares);
 

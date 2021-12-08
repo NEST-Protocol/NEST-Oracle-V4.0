@@ -93,7 +93,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
         // The information of mining fee
         // Low 128-bits represent fee per post
         // High 128-bits represent the current counter of no fee sheets (including settled)
-        uint fee;
+        uint rewards;
 
         // 计价代币地址, 0表示eth
         address token0;
@@ -286,7 +286,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
             // The information of mining fee
             // Low 128-bits represent fee per post
             // High 128-bits represent the current counter of no fee sheets (including settled)
-            channel.fee,
+            channel.rewards,
 
             // 计价代币地址, 0表示eth
             channel.token0,
@@ -375,7 +375,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
             // 6. Create token price sheet
             // TODO: 对事件参数进行优化
             emit Post(channelId, cn, msg.sender, sheets.length, scale, equivalent[cn]);
-            _createPriceSheet(sheets, accountIndex, uint32(scale), uint(config.pledgeNest), 1, equivalent[cn]);
+            _createPriceSheet(sheets, accountIndex, uint32(scale), uint(config.pledgeNest), cn == 0 ? 1 : 0, equivalent[cn]);
         }
 
         // 5. Deposit fee
@@ -385,7 +385,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
             require(fee >= postFeeUnit * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
         }
         if (fee > 0) {
-            channel.fee += fee;
+            channel.rewards += fee;
         }
     }
 
@@ -617,9 +617,8 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
     /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
     /// @param channelId 报价通道编号
-    /// @param pairIndices 报价对编号数组
-    /// @param indices A list of indices of sheets w.r.t. `token`
-    function close(uint channelId, uint[] calldata pairIndices, uint[] calldata indices) external override {
+    /// @param indices 报价单二维数组，外层对应通道号，内层对应报价单号，如果仅关闭后面的报价对，则前面的报价对数组传空数组
+    function close(uint channelId, uint[][] calldata indices) external override {
         
         //Config memory config = _config;
         PriceChannel storage channel = _channels[channelId];
@@ -630,33 +629,36 @@ contract NestBatchMining is NestBase, INestBatchMining {
         //     Tuple memory total
         // ) = _closeList(_config, channel, pair, indices);
 
-            // uint rewardPerBlock = uint(channel.rewardPerBlock);
-            // uint genesisBlock = uint(channel.genesisBlock);
-            // uint reductionRate = uint(channel.reductionRate);
+        //uint rewardPerBlock = uint(channel.rewardPerBlock);
+        //uint genesisBlock = uint(channel.genesisBlock);
+        //uint reductionRate = uint(channel.reductionRate);
+        uint reward = 0;
 
         uint accountIndex = 0;
         // TODO: storage变量必须在定义时初始化，因此在此处赋值，但是由于accountIndex此时为0，此赋值没有意义
         mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
+        // TODO: 不用Tuple?
         Tuple memory total;
 
-        for (uint j = pairIndices.length; j > 0;) {
-            PricePair storage pair = channel.pairs[pairIndices[--j]];
+        for (uint j = indices.length; j > 0;) {
+            PricePair storage pair = channel.pairs[--j];
 
             ///////////////////////////////////////////////////////////////////////////////////////
             PriceSheet[] storage sheets = pair.sheets;
 
             // 1. Traverse sheets
-            for (uint i = indices.length; i > 0;) {
+            for (uint i = indices[j].length; i > 0;) {
 
                 // Because too many variables need to be returned, too many variables will be defined, 
                 // so the structure of tuple is defined
                 (uint minerIndex, Tuple memory value) = _close(
                     _config, 
                     sheets, 
-                    indices[--i], 
-                    uint(channel.rewardPerBlock),
-                    uint(channel.genesisBlock),
-                    uint(channel.reductionRate)
+                    indices[j][--i]//, 
+                    // TODO：优化之
+                    // rewardPerBlock,
+                    // genesisBlock,
+                    // reductionRate
                 );
                 // Batch closing quotation can only close sheet of the same user
                 if (accountIndex == 0) {
@@ -669,8 +671,22 @@ contract NestBatchMining is NestBase, INestBatchMining {
                     require(accountIndex == minerIndex, "NM:!miner");
                 }
 
-                total.ntokenValue += value.ntokenValue;
-                total.nestValue += value.nestValue;
+                // TODO: 后面的通道不出矿，不需要出矿逻辑
+                // 出矿按照第一个通道计算
+                if (j == 0) {
+                    //total.ntokenValue += value.ntokenValue;
+
+                    // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
+                    // 这种情况是不合理的，需要由开通者负责
+                    reward += (
+                        uint(value.mined)
+                        * uint(value.share)
+                        * _reduction(uint(value.height) - uint(channel.genesisBlock), uint(channel.reductionRate))
+                        * uint(channel.rewardPerBlock)
+                        / uint(value.totalShares) / 400
+                    );
+                }
+                total.nestNum1k += value.nestNum1k;
                 total.ethNum += value.ethNum;
                 total.tokenValue += value.tokenValue;
             }
@@ -687,27 +703,34 @@ contract NestBatchMining is NestBase, INestBatchMining {
         _unfreeze(balances, channel.token0, uint(total.ethNum) * uint(channel.unit), accountIndex);
         
         // 解冻nest
-        _unfreeze(balances, NEST_TOKEN_ADDRESS, uint(total.nestValue), accountIndex);
+        _unfreeze(balances, NEST_TOKEN_ADDRESS, uint(total.nestNum1k) * 1000 ether, accountIndex);
 
         uint vault = uint(channel.vault);
-        uint ntokenValue = uint(total.ntokenValue);
-        if (ntokenValue > vault) {
-            ntokenValue = vault;
+        //uint ntokenValue = uint(total.ntokenValue);
+        if (reward > vault) {
+            reward = vault;
         }
         // 记录每个通道矿币的数量，防止开通者不打币，直接用资金池内的资金
-        channel.vault = uint96(vault - ntokenValue);
+        channel.vault = uint96(vault - reward);
+        // if (total.ntokenValue > channel.vault) {
+        //     total.ntokenValue = channel.vault;
+        //     channel.vault = uint96(0);
+        // } else {
+        //     channel.vault -= total.ntokenValue;
+        // }
+        
         // 奖励矿币
-        _unfreeze(balances, channel.reward, ntokenValue, accountIndex);
+        _unfreeze(balances, channel.reward, reward, accountIndex);
     }
 
-    /// @dev The function updates the statistics of price sheets
-    ///     It calculates from priceInfo to the newest that is effective.
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
-    function stat(uint channelId, uint pairIndex) external override {
-        PricePair storage pair = _channels[channelId].pairs[pairIndex];
-        _stat(_config, pair, pair.sheets);
-    }
+    // /// @dev The function updates the statistics of price sheets
+    // ///     It calculates from priceInfo to the newest that is effective.
+    // /// @param channelId 报价通道编号
+    // /// @param pairIndex 报价对编号
+    // function stat(uint channelId, uint pairIndex) external override {
+    //     PricePair storage pair = _channels[channelId].pairs[pairIndex];
+    //     _stat(_config, pair, pair.sheets);
+    // }
 
     /// @dev View the number of assets specified by the user
     /// @param tokenAddress Destination token address
@@ -733,14 +756,14 @@ contract NestBatchMining is NestBase, INestBatchMining {
         TransferHelper.safeTransfer(tokenAddress, msg.sender, value);
     }
 
+    // TODO: 解决出矿计算问题
     /// @dev Estimated mining amount
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
     /// @return Estimated mining amount
-    function estimate(uint channelId, uint pairIndex) external view override returns (uint) {
+    function estimate(uint channelId) external view override returns (uint) {
 
         PriceChannel storage channel = _channels[channelId];
-        PriceSheet[] storage sheets = channel.pairs[pairIndex].sheets;
+        PriceSheet[] storage sheets = channel.pairs[0].sheets;
         uint index = sheets.length;
         uint blocks = 10;
         while (index > 0) {
@@ -761,17 +784,15 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
     /// @dev Query the quantity of the target quotation
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
     /// @param index The index of the sheet
     /// @return minedBlocks Mined block period from previous block
     /// @return totalShares Total shares of sheets in the block
     function getMinedBlocks(
         uint channelId,
-        uint pairIndex,
         uint index
     ) external view override returns (uint minedBlocks, uint totalShares) {
 
-        PriceSheet[] storage sheets = _channels[channelId].pairs[pairIndex].sheets;
+        PriceSheet[] storage sheets = _channels[channelId].pairs[0].sheets;
         PriceSheet memory sheet = sheets[index];
 
         // The bite sheet or ntoken sheet doesn't mining
@@ -785,7 +806,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @dev The function returns eth rewards of specified ntoken
     /// @param channelId 报价通道编号
     function totalETHRewards(uint channelId) external view override returns (uint) {
-        return _channels[channelId].fee;
+        return _channels[channelId].rewards;
     }
 
     /// @dev Pay
@@ -796,7 +817,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:!governance");
-        channel.fee -= value;
+        channel.rewards -= value;
         // pay
         payable(to).transfer(value);
     }
@@ -808,7 +829,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:!governance");
-        channel.fee -= value;
+        channel.rewards -= value;
         INestLedger(INestMapping(_governance).getNestLedgerAddress()).addETHReward { value: value } (channelId);
     }
 
@@ -1010,18 +1031,22 @@ contract NestBatchMining is NestBase, INestBatchMining {
     struct Tuple {
         uint tokenValue;
         uint64 ethNum;
-        uint96 nestValue;
-        uint96 ntokenValue;
+        uint24 nestNum1k;
+        //uint96 ntokenValue;
+        uint32 mined;
+        uint32 share;
+        uint32 totalShares;
+        uint32 height;
     }
 
     // Close price sheet
     function _close(
         Config memory config,
         PriceSheet[] storage sheets,
-        uint index,
-        uint rewardPerBlock,
-        uint genesisBlock,
-        uint reductionRate
+        uint index//,
+        // uint rewardPerBlock,
+        // uint genesisBlock,
+        // uint reductionRate
     ) private returns (uint accountIndex, Tuple memory value) {
 
         PriceSheet memory sheet = sheets[index];
@@ -1038,18 +1063,22 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
                 // Currently, mined represents the number of blocks has mined
                 (uint mined, uint totalShares) = _calcMinedBlocks(sheets, index, sheet);
-                // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
-                // 这种情况是不合理的，需要由开通者负责
-                value.ntokenValue = uint96(
-                    mined
-                    * tmp
-                    * _reduction(height - genesisBlock, reductionRate)
-                    * rewardPerBlock
-                    / totalShares / 400
-                );
+                // // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
+                // // 这种情况是不合理的，需要由开通者负责
+                // value.ntokenValue = uint96(
+                //     mined
+                //     * tmp
+                //     * _reduction(height - genesisBlock, reductionRate)
+                //     * rewardPerBlock
+                //     / totalShares / 400
+                // );
+                value.mined = uint32(mined);
+                value.share = uint32(tmp);
+                value.totalShares = uint32(totalShares);
+                value.height = uint32(height);
             }
 
-            value.nestValue = uint96(uint(sheet.nestNum1k) * 1000 ether);
+            value.nestNum1k = sheet.nestNum1k; //uint96(uint(sheet.nestNum1k) * 1000 ether);
             value.ethNum = uint64(sheet.ethNumBal);
             value.tokenValue = _decodeFloat(sheet.priceFloat) * uint(sheet.tokenNumBal);
 
@@ -1061,6 +1090,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
         }
     }
 
+    // TODO: 如果有吃单，出矿会减少?
     // Calculation number of blocks which mined
     function _calcMinedBlocks(
         PriceSheet[] storage sheets,
@@ -1241,221 +1271,221 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
     /* ========== 价格查询 ========== */
     
-    // /// @dev Get the latest trigger price
-    // /// @param channel 报价通道
-    // /// @return blockNumber The block number of price
-    // /// @return price The token price. (1eth equivalent to (price) token)
-    // function _triggeredPrice(PriceChannel storage channel) internal view returns (uint blockNumber, uint price) {
+    /// @dev Get the latest trigger price
+    /// @param pair 报价对
+    /// @return blockNumber The block number of price
+    /// @return price The token price. (1eth equivalent to (price) token)
+    function _triggeredPrice(PricePair storage pair) internal view returns (uint blockNumber, uint price) {
 
-    //     PriceInfo memory priceInfo = channel.price;
+        PriceInfo memory priceInfo = pair.price;
 
-    //     if (uint(priceInfo.remainNum) > 0) {
-    //         return (uint(priceInfo.height) + uint(_config.priceEffectSpan), _decodeFloat(priceInfo.priceFloat));
-    //     }
+        if (uint(priceInfo.remainNum) > 0) {
+            return (uint(priceInfo.height) + uint(_config.priceEffectSpan), _decodeFloat(priceInfo.priceFloat));
+        }
         
-    //     return (0, 0);
-    // }
+        return (0, 0);
+    }
 
-    // /// @dev Get the full information of latest trigger price
-    // /// @param channel 报价通道
-    // /// @return blockNumber The block number of price
-    // /// @return price The token price. (1eth equivalent to (price) token)
-    // /// @return avgPrice Average price
-    // /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that 
-    // ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447,
-    // ///         it means that the volatility has exceeded the range that can be expressed
-    // function _triggeredPriceInfo(PriceChannel storage channel) internal view returns (
-    //     uint blockNumber,
-    //     uint price,
-    //     uint avgPrice,
-    //     uint sigmaSQ
-    // ) {
+    /// @dev Get the full information of latest trigger price
+    /// @param pair 报价对
+    /// @return blockNumber The block number of price
+    /// @return price The token price. (1eth equivalent to (price) token)
+    /// @return avgPrice Average price
+    /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that 
+    ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447,
+    ///         it means that the volatility has exceeded the range that can be expressed
+    function _triggeredPriceInfo(PricePair storage pair) internal view returns (
+        uint blockNumber,
+        uint price,
+        uint avgPrice,
+        uint sigmaSQ
+    ) {
 
-    //     PriceInfo memory priceInfo = channel.price;
+        PriceInfo memory priceInfo = pair.price;
 
-    //     if (uint(priceInfo.remainNum) > 0) {
-    //         return (
-    //             uint(priceInfo.height) + uint(_config.priceEffectSpan),
-    //             _decodeFloat(priceInfo.priceFloat),
-    //             _decodeFloat(priceInfo.avgFloat),
-    //             (uint(priceInfo.sigmaSQ) * 1 ether) >> 48
-    //         );
-    //     }
+        if (uint(priceInfo.remainNum) > 0) {
+            return (
+                uint(priceInfo.height) + uint(_config.priceEffectSpan),
+                _decodeFloat(priceInfo.priceFloat),
+                _decodeFloat(priceInfo.avgFloat),
+                (uint(priceInfo.sigmaSQ) * 1 ether) >> 48
+            );
+        }
 
-    //     return (0, 0, 0, 0);
-    // }
+        return (0, 0, 0, 0);
+    }
 
-    // /// @dev Find the price at block number
-    // /// @param channel 报价通道
-    // /// @param height Destination block number
-    // /// @return blockNumber The block number of price
-    // /// @return price The token price. (1eth equivalent to (price) token)
-    // function _findPrice(
-    //     PriceChannel storage channel,
-    //     uint height
-    // ) internal view returns (uint blockNumber, uint price) {
+    /// @dev Find the price at block number
+    /// @param pair 报价对
+    /// @param height Destination block number
+    /// @return blockNumber The block number of price
+    /// @return price The token price. (1eth equivalent to (price) token)
+    function _findPrice(
+        PricePair storage pair,
+        uint height
+    ) internal view returns (uint blockNumber, uint price) {
 
-    //     PriceSheet[] storage sheets = channel.sheets;
-    //     uint priceEffectSpan = uint(_config.priceEffectSpan);
+        PriceSheet[] storage sheets = pair.sheets;
+        uint priceEffectSpan = uint(_config.priceEffectSpan);
 
-    //     uint length = sheets.length;
-    //     uint index = 0;
-    //     uint sheetHeight;
-    //     height -= priceEffectSpan;
-    //     {
-    //         // If there is no sheet in this channel, length is 0, length - 1 will overflow,
-    //         uint right = length - 1;
-    //         uint left = 0;
-    //         // Find the index use Binary Search
-    //         while (left < right) {
+        uint length = sheets.length;
+        uint index = 0;
+        uint sheetHeight;
+        height -= priceEffectSpan;
+        {
+            // If there is no sheet in this channel, length is 0, length - 1 will overflow,
+            uint right = length - 1;
+            uint left = 0;
+            // Find the index use Binary Search
+            while (left < right) {
 
-    //             index = (left + right) >> 1;
-    //             sheetHeight = uint(sheets[index].height);
-    //             if (height > sheetHeight) {
-    //                 left = ++index;
-    //             } else if (height < sheetHeight) {
-    //                 // When index = 0, this statement will have an underflow exception, which usually 
-    //                 // indicates that the effective block height passed during the call is lower than 
-    //                 // the block height of the first quotation
-    //                 right = --index;
-    //             } else {
-    //                 break;
-    //             }
-    //         }
-    //     }
+                index = (left + right) >> 1;
+                sheetHeight = uint(sheets[index].height);
+                if (height > sheetHeight) {
+                    left = ++index;
+                } else if (height < sheetHeight) {
+                    // When index = 0, this statement will have an underflow exception, which usually 
+                    // indicates that the effective block height passed during the call is lower than 
+                    // the block height of the first quotation
+                    right = --index;
+                } else {
+                    break;
+                }
+            }
+        }
 
-    //     // Calculate price
-    //     uint totalEthNum = 0;
-    //     uint totalTokenValue = 0;
-    //     uint h = 0;
-    //     uint remainNum;
-    //     PriceSheet memory sheet;
+        // Calculate price
+        uint totalEthNum = 0;
+        uint totalTokenValue = 0;
+        uint h = 0;
+        uint remainNum;
+        PriceSheet memory sheet;
 
-    //     // Find sheets forward
-    //     for (uint i = index; i < length;) {
+        // Find sheets forward
+        for (uint i = index; i < length;) {
 
-    //         sheet = sheets[i++];
-    //         sheetHeight = uint(sheet.height);
-    //         if (height < sheetHeight) {
-    //             break;
-    //         }
-    //         remainNum = uint(sheet.remainNum);
-    //         if (remainNum > 0) {
-    //             if (h == 0) {
-    //                 h = sheetHeight;
-    //             } else if (h != sheetHeight) {
-    //                 break;
-    //             }
-    //             totalEthNum += remainNum;
-    //             totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
-    //         }
-    //     }
+            sheet = sheets[i++];
+            sheetHeight = uint(sheet.height);
+            if (height < sheetHeight) {
+                break;
+            }
+            remainNum = uint(sheet.remainNum);
+            if (remainNum > 0) {
+                if (h == 0) {
+                    h = sheetHeight;
+                } else if (h != sheetHeight) {
+                    break;
+                }
+                totalEthNum += remainNum;
+                totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
+            }
+        }
 
-    //     // Find sheets backward
-    //     while (index > 0) {
+        // Find sheets backward
+        while (index > 0) {
 
-    //         sheet = sheets[--index];
-    //         remainNum = uint(sheet.remainNum);
-    //         if (remainNum > 0) {
-    //             sheetHeight = uint(sheet.height);
-    //             if (h == 0) {
-    //                 h = sheetHeight;
-    //             } else if (h != sheetHeight) {
-    //                 break;
-    //             }
-    //             totalEthNum += remainNum;
-    //             totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
-    //         }
-    //     }
+            sheet = sheets[--index];
+            remainNum = uint(sheet.remainNum);
+            if (remainNum > 0) {
+                sheetHeight = uint(sheet.height);
+                if (h == 0) {
+                    h = sheetHeight;
+                } else if (h != sheetHeight) {
+                    break;
+                }
+                totalEthNum += remainNum;
+                totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
+            }
+        }
 
-    //     if (totalEthNum > 0) {
-    //         return (h + priceEffectSpan, totalTokenValue / totalEthNum);
-    //     }
-    //     return (0, 0);
-    // }
+        if (totalEthNum > 0) {
+            return (h + priceEffectSpan, totalTokenValue / totalEthNum);
+        }
+        return (0, 0);
+    }
 
-    // /// @dev Get the latest effective price
-    // /// @param channel 报价通道
-    // /// @return blockNumber The block number of price
-    // /// @return price The token price. (1eth equivalent to (price) token)
-    // function _latestPrice(PriceChannel storage channel) internal view returns (uint blockNumber, uint price) {
+    /// @dev Get the latest effective price
+    /// @param pair 报价对
+    /// @return blockNumber The block number of price
+    /// @return price The token price. (1eth equivalent to (price) token)
+    function _latestPrice(PricePair storage pair) internal view returns (uint blockNumber, uint price) {
 
-    //     PriceSheet[] storage sheets = channel.sheets;
-    //     PriceSheet memory sheet;
+        PriceSheet[] storage sheets = pair.sheets;
+        PriceSheet memory sheet;
 
-    //     uint priceEffectSpan = uint(_config.priceEffectSpan);
-    //     //uint h = block.number - priceEffectSpan;
-    //     uint index = sheets.length;
-    //     uint totalEthNum = 0;
-    //     uint totalTokenValue = 0;
-    //     uint height = 0;
+        uint priceEffectSpan = uint(_config.priceEffectSpan);
+        //uint h = block.number - priceEffectSpan;
+        uint index = sheets.length;
+        uint totalEthNum = 0;
+        uint totalTokenValue = 0;
+        uint height = 0;
 
-    //     for (; ; ) {
+        for (; ; ) {
 
-    //         bool flag = index == 0;
-    //         if (flag || height != uint((sheet = sheets[--index]).height)) {
-    //             if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
-    //                 return (height + priceEffectSpan, totalTokenValue / totalEthNum);
-    //             }
-    //             if (flag) {
-    //                 break;
-    //             }
-    //             totalEthNum = 0;
-    //             totalTokenValue = 0;
-    //             height = uint(sheet.height);
-    //         }
+            bool flag = index == 0;
+            if (flag || height != uint((sheet = sheets[--index]).height)) {
+                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
+                    return (height + priceEffectSpan, totalTokenValue / totalEthNum);
+                }
+                if (flag) {
+                    break;
+                }
+                totalEthNum = 0;
+                totalTokenValue = 0;
+                height = uint(sheet.height);
+            }
 
-    //         uint remainNum = uint(sheet.remainNum);
-    //         totalEthNum += remainNum;
-    //         totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
-    //     }
+            uint remainNum = uint(sheet.remainNum);
+            totalEthNum += remainNum;
+            totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
+        }
 
-    //     return (0, 0);
-    // }
+        return (0, 0);
+    }
 
-    // /// @dev Get the last (num) effective price
-    // /// @param channel 报价通道
-    // /// @param count The number of prices that want to return
-    // /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
-    // function _lastPriceList(PriceChannel storage channel, uint count) internal view returns (uint[] memory) {
+    /// @dev Get the last (num) effective price
+    /// @param pair 报价对
+    /// @param count The number of prices that want to return
+    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    function _lastPriceList(PricePair storage pair, uint count) internal view returns (uint[] memory) {
 
-    //     PriceSheet[] storage sheets = channel.sheets;
-    //     PriceSheet memory sheet;
-    //     uint[] memory array = new uint[](count <<= 1);
+        PriceSheet[] storage sheets = pair.sheets;
+        PriceSheet memory sheet;
+        uint[] memory array = new uint[](count <<= 1);
 
-    //     uint priceEffectSpan = uint(_config.priceEffectSpan);
-    //     //uint h = block.number - priceEffectSpan;
-    //     uint index = sheets.length;
-    //     uint totalEthNum = 0;
-    //     uint totalTokenValue = 0;
-    //     uint height = 0;
+        uint priceEffectSpan = uint(_config.priceEffectSpan);
+        //uint h = block.number - priceEffectSpan;
+        uint index = sheets.length;
+        uint totalEthNum = 0;
+        uint totalTokenValue = 0;
+        uint height = 0;
 
-    //     for (uint i = 0; i < count;) {
+        for (uint i = 0; i < count;) {
 
-    //         bool flag = index == 0;
-    //         if (flag || height != uint((sheet = sheets[--index]).height)) {
-    //             if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
-    //                 array[i++] = height + priceEffectSpan;
-    //                 array[i++] = totalTokenValue / totalEthNum;
-    //             }
-    //             if (flag) {
-    //                 break;
-    //             }
-    //             totalEthNum = 0;
-    //             totalTokenValue = 0;
-    //             height = uint(sheet.height);
-    //         }
+            bool flag = index == 0;
+            if (flag || height != uint((sheet = sheets[--index]).height)) {
+                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
+                    array[i++] = height + priceEffectSpan;
+                    array[i++] = totalTokenValue / totalEthNum;
+                }
+                if (flag) {
+                    break;
+                }
+                totalEthNum = 0;
+                totalTokenValue = 0;
+                height = uint(sheet.height);
+            }
 
-    //         uint remainNum = uint(sheet.remainNum);
-    //         totalEthNum += remainNum;
-    //         totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
-    //     }
+            uint remainNum = uint(sheet.remainNum);
+            totalEthNum += remainNum;
+            totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
+        }
 
-    //     return array;
-    // } 
+        return array;
+    } 
 
     // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
-    // /// @param channel 报价通道
+    // /// @param pair 报价对
     // /// @return latestPriceBlockNumber The block number of latest price
     // /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
     // /// @return triggeredPriceBlockNumber The block number of triggered price
@@ -1464,7 +1494,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
     // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
     // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    // function _latestPriceAndTriggeredPriceInfo(PriceChannel storage channel) internal view 
+    // function _latestPriceAndTriggeredPriceInfo(PricePair storage pair) internal view 
     // returns (
     //     uint latestPriceBlockNumber,
     //     uint latestPriceValue,
@@ -1473,39 +1503,39 @@ contract NestBatchMining is NestBase, INestBatchMining {
     //     uint triggeredAvgPrice,
     //     uint triggeredSigmaSQ
     // ) {
-    //     (latestPriceBlockNumber, latestPriceValue) = _latestPrice(channel);
+    //     (latestPriceBlockNumber, latestPriceValue) = _latestPrice(pair);
     //     (
     //         triggeredPriceBlockNumber, 
     //         triggeredPriceValue, 
     //         triggeredAvgPrice, 
     //         triggeredSigmaSQ
-    //     ) = _triggeredPriceInfo(channel);
+    //     ) = _triggeredPriceInfo(pair);
     // }
 
-    // /// @dev Returns lastPriceList and triggered price info
-    // /// @param channel 报价通道
-    // /// @param count The number of prices that want to return
-    // /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
-    // /// @return triggeredPriceBlockNumber The block number of triggered price
-    // /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    // /// @return triggeredAvgPrice Average price
-    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    // function _lastPriceListAndTriggeredPriceInfo(PriceChannel storage channel, uint count) internal view
-    // returns (
-    //     uint[] memory prices,
-    //     uint triggeredPriceBlockNumber,
-    //     uint triggeredPriceValue,
-    //     uint triggeredAvgPrice,
-    //     uint triggeredSigmaSQ
-    // ) {
-    //     prices = _lastPriceList(channel, count);
-    //     (
-    //         triggeredPriceBlockNumber, 
-    //         triggeredPriceValue, 
-    //         triggeredAvgPrice, 
-    //         triggeredSigmaSQ
-    //     ) = _triggeredPriceInfo(channel);
-    // }
+    /// @dev Returns lastPriceList and triggered price info
+    /// @param pair 报价对
+    /// @param count The number of prices that want to return
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return triggeredPriceBlockNumber The block number of triggered price
+    /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
+    /// @return triggeredAvgPrice Average price
+    /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
+    /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
+    /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
+    function _lastPriceListAndTriggeredPriceInfo(PricePair storage pair, uint count) internal view
+    returns (
+        uint[] memory prices,
+        uint triggeredPriceBlockNumber,
+        uint triggeredPriceValue,
+        uint triggeredAvgPrice,
+        uint triggeredSigmaSQ
+    ) {
+        prices = _lastPriceList(pair, count);
+        (
+            triggeredPriceBlockNumber, 
+            triggeredPriceValue, 
+            triggeredAvgPrice, 
+            triggeredSigmaSQ
+        ) = _triggeredPriceInfo(pair);
+    }
 }
