@@ -14,10 +14,11 @@ interface INestBatchMining {
 
     /// @dev Post event
     /// @param channelId 报价通道编号
+    /// @param pairIndex 报价对编号
     /// @param miner Address of miner
     /// @param index Index of the price sheet
     /// @param scale 报价规模
-    event Post(uint channelId, address miner, uint index, uint scale, uint price);
+    event Post(uint channelId, uint pairIndex, address miner, uint index, uint scale, uint price);
 
     /* ========== Structures ========== */
     
@@ -119,6 +120,14 @@ interface INestBatchMining {
         address[] tokens;
     }
 
+    /// @dev 报价对视图
+    struct PairView {
+        // 报价代币地址
+        address target;
+        // 报价单数量
+        uint96 sheetCount;
+    }
+
     /// @dev Price channel view
     struct PriceChannelView {
         
@@ -129,7 +138,7 @@ interface INestBatchMining {
         // The information of mining fee
         // Low 128-bits represent fee per post
         // High 128-bits represent the current counter of no fee sheets (including settled)
-        uint feeInfo;
+        uint fee;
 
         // 计价代币地址, 0表示eth
         address token0;
@@ -157,8 +166,11 @@ interface INestBatchMining {
         uint16 singleFee;
         // 衰减系数，万分制。8000
         uint16 reductionRate;
+        // 报价对数量
+        uint16 count;
 
-        address[] tokens;
+        // 报价对信息
+        PairView[] pairs;
     }
 
     /* ========== Configuration ========== */
@@ -233,9 +245,9 @@ interface INestBatchMining {
     /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
     /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param pairIndices 报价对编号数组
     /// @param indices A list of indices of sheets w.r.t. `token`
-    function close(uint channelId, uint pairIndex, uint[] memory indices) external;
+    function close(uint channelId, uint[] calldata pairIndices, uint[] calldata indices) external;
 
     /// @dev The function updates the statistics of price sheets
     ///     It calculates from priceInfo to the newest that is effective.

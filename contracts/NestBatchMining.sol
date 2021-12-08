@@ -93,7 +93,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
         // The information of mining fee
         // Low 128-bits represent fee per post
         // High 128-bits represent the current counter of no fee sheets (including settled)
-        uint feeInfo;
+        uint fee;
 
         // 计价代币地址, 0表示eth
         address token0;
@@ -118,9 +118,11 @@ contract NestBatchMining is NestBase, INestBatchMining {
         uint16 singleFee;
         // 衰减系数，万分制。8000
         uint16 reductionRate;
+        // 报价对数量
         uint16 count;
 
-        PricePair[255] pairs;
+        // 报价对数组
+        PricePair[0xFFFF] pairs;
     }
 
     /// @dev Structure is used to represent a storage location. Storage variable can be used to avoid indexing 
@@ -159,7 +161,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     uint constant DIMI_ETHER = 0.0001 ether;
 
     // Ethereum average block time interval, 14 seconds
-    uint constant ETHEREUM_BLOCK_TIMESPAN = 3;
+    uint constant ETHEREUM_BLOCK_TIMESPAN = 14;
 
     /* ========== Governance ========== */
 
@@ -199,10 +201,30 @@ contract NestBatchMining is NestBase, INestBatchMining {
         // 衰减系数，万分制。8000
         channel.reductionRate = config.reductionRate;
         channel.count = uint16(config.tokens.length);
+
+        // 遍历创建报价对
         for (uint i = 0; i < config.tokens.length; ++i) {
             require(token0 != config.tokens[i], "NOM:token can't equal token1");
+            for (uint j = 0; j < i; ++j) {
+                require(config.tokens[i] != config.tokens[j], "NOM:token reiterated");
+            }
             channel.pairs[i].target = config.tokens[i];
         }
+    }
+
+    /// @dev 添加报价代币，与计价代币形成新的报价对（暂不支持删除，请谨慎添加）
+    /// @param channelId 报价通道
+    /// @param target 目标代币地址
+    function addPair(uint channelId, address target) external {
+        PriceChannel storage channel = _channels[channelId];
+        require(channel.governance == msg.sender, "NOM:not governance");
+        require(channel.token0 != target, "NOM:token can't equal token1");
+        uint count = uint(channel.count);
+        for (uint j = 0; j < count; ++j) {
+            require(channel.pairs[j].target != target, "NOM:token reiterated");
+        }
+        channel.pairs[count].target = target;
+        ++channel.count;
     }
 
     /// @dev 向报价通道注入矿币
@@ -234,15 +256,6 @@ contract NestBatchMining is NestBase, INestBatchMining {
         channel.vault -= vault;
     }
 
-    // /// @dev 向报价通道注入NToken矿币
-    // /// @param channelId 报价通道
-    // /// @param vault 注入矿币数量
-    // function increaseNToken(uint channelId, uint96 vault) external onlyGovernance {
-    //     PriceChannel storage channel = _channels[channelId];
-    //     INToken(channel.reward).increaseTotal(vault);
-    //     channel.vault += vault;
-    // }
-
     /// @dev 修改治理权限地址
     /// @param channelId 报价通道
     /// @param newGovernance 新治理权限地址
@@ -259,9 +272,10 @@ contract NestBatchMining is NestBase, INestBatchMining {
         PriceChannel storage channel = _channels[channelId];
 
         uint count = uint(channel.count);
-        address[] memory tokens = new address[](count);
+        PairView[] memory pairs = new PairView[](count);
         for (uint i = 0; i < count; ++i) {
-            tokens[i] = channel.pairs[i].target;
+            PricePair storage pair = channel.pairs[i];
+            pairs[i] = PairView(pair.target, uint96(pair.sheets.length));
         }
 
         return PriceChannelView (
@@ -272,7 +286,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
             // The information of mining fee
             // Low 128-bits represent fee per post
             // High 128-bits represent the current counter of no fee sheets (including settled)
-            channel.feeInfo,
+            channel.fee,
 
             // 计价代币地址, 0表示eth
             channel.token0,
@@ -300,8 +314,10 @@ contract NestBatchMining is NestBase, INestBatchMining {
             channel.singleFee,
             // 衰减系数，万分制。8000
             channel.reductionRate,
+            // 报价对数量
+            channel.count,
 
-            tokens
+            pairs
         );
     }
 
@@ -322,7 +338,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
         // 2. Check price channel
         // 3. Load token channel and sheets
         PriceChannel storage channel = _channels[channelId];
-        PricePair[255] storage pairs = channel.pairs;
+        //PricePair[0xFFFF] storage pairs = channel.pairs;
         //PriceSheet[] storage sheets = channel.sheets;
 
         // 4. Freeze assets
@@ -335,31 +351,33 @@ contract NestBatchMining is NestBase, INestBatchMining {
         // precision loss can be transferred out as system income in the future
         mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
 
-        uint count = uint(channel.count);
+        uint cn = uint(channel.count);
         uint fee = msg.value;
+
+        // 冻结nest
+        fee = _freeze(balances, NEST_TOKEN_ADDRESS, cn * uint(config.pledgeNest) * 1000 ether, fee);
+    
         // 冻结token0
-        fee = _freeze(balances, channel.token0, uint(channel.unit) * scale * count, fee);
+        fee = _freeze(balances, channel.token0, cn * uint(channel.unit) * scale, fee);
 
         // 冻结token1
         //fee = _freeze(balances, channel.token1, scale * equivalent, fee);
-        while (count > 0) {
-            //PricePair storage pair = pairs[--count];
-            fee = _freeze(balances, pairs[--count].target, scale * equivalent[count], fee);
+        while (cn > 0) {
+            PricePair storage pair = channel.pairs[--cn];
+            fee = _freeze(balances, pair.target, scale * equivalent[cn], fee);
 
-            PriceSheet[] storage sheets = pairs[count].sheets;
+            PriceSheet[] storage sheets = pair.sheets;
             // Calculate the price
             // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
             // is placed before the sheet is added, which can reduce unnecessary traversal
-            _stat(config, pairs[count], sheets);
+            _stat(config, pair, sheets);
             
             // 6. Create token price sheet
-            emit Post(channelId, msg.sender, sheets.length, scale, equivalent[count]);
-            _createPriceSheet(sheets, accountIndex, uint32(scale), uint(config.pledgeNest), 1, equivalent[count]);
+            // TODO: 对事件参数进行优化
+            emit Post(channelId, cn, msg.sender, sheets.length, scale, equivalent[cn]);
+            _createPriceSheet(sheets, accountIndex, uint32(scale), uint(config.pledgeNest), 1, equivalent[cn]);
         }
 
-        // 冻结nest
-        fee = _freeze(balances, NEST_TOKEN_ADDRESS, uint(config.pledgeNest) * 1000 ether * count, fee);
-    
         // 5. Deposit fee
         // 只有配置了报价佣金时才检查fee
         uint postFeeUnit = uint(channel.postFeeUnit);
@@ -367,7 +385,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
             require(fee >= postFeeUnit * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
         }
         if (fee > 0) {
-            channel.feeInfo += fee;
+            channel.fee += fee;
         }
     }
 
@@ -380,82 +398,85 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
     function takeToken0(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable override {
 
-        // Config memory config = _config;
+        Config memory config = _config;
 
-        // // 1. Check arguments
-        // require(takeNum > 0, "NM:!takeNum");
-        // require(newEquivalent > 0, "NM:!price");
+        // 1. Check arguments
+        require(takeNum > 0, "NM:!takeNum");
+        require(newEquivalent > 0, "NM:!price");
 
-        // // 2. Load price sheet
-        // PriceChannel storage channel = _channels[channelId];
-        // PricePair storage pair = channel.pairs[pairIndex];
-        // PriceSheet[] storage sheets = pair.sheets;
-        // PriceSheet memory sheet = sheets[index];
+        // 2. Load price sheet
+        PriceChannel storage channel = _channels[channelId];
+        PricePair storage pair = channel.pairs[pairIndex];
+        PriceSheet[] storage sheets = pair.sheets;
+        PriceSheet memory sheet = sheets[index];
 
-        // // 3. Check state
-        // require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
-        // require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
+        // 3. Check state
+        require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
+        require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
 
-        // // 4. Deposit fee
-        // // 5. Calculate the number of eth, token and nest needed, and freeze them
-        // uint needEthNum;
-        // uint level = uint(sheet.level);
+        uint accountIndex = _addressIndex(msg.sender);
+        // Number of nest to be pledged
+        //uint needNest1k = ((takeNum << 1) / uint(config.postEthUnit)) * uint(config.pledgeNest);
+        // sheet.ethNumBal + sheet.tokenNumBal is always two times to sheet.ethNum
+        uint needNest1k = (takeNum << 2) * uint(sheet.nestNum1k) / (uint(sheet.ethNumBal) + uint(sheet.tokenNumBal));
 
-        // // When the level of the sheet is less than 4, both the nest and the scale of the offer are doubled
-        // if (level < uint(config.maxBiteNestedLevel)) {
-        //     // Double scale sheet
-        //     needEthNum = takeNum << 1;
-        //     ++level;
-        // } 
-        // // When the level of the sheet reaches 4 or more, nest doubles, but the scale does not
-        // else {
-        //     // Single scale sheet
-        //     needEthNum = takeNum;
-        //     // It is possible that the length of a single chain exceeds 255. When the length of a chain reaches 4 
-        //     // or more, there is no logical dependence on the specific value of the contract, and the count will
-        //     // not increase after it is accumulated to 255
-        //     if (level < 255) ++level;
-        // }
+        // 4. Deposit fee
+        // 5. Calculate the number of eth, token and nest needed, and freeze them
+        uint needEthNum;
+        {
+            uint level = uint(sheet.level);
 
-        // // Number of nest to be pledged
-        // //uint needNest1k = ((takeNum << 1) / uint(config.postEthUnit)) * uint(config.pledgeNest);
-        // // sheet.ethNumBal + sheet.tokenNumBal is always two times to sheet.ethNum
-        // uint needNest1k = (takeNum << 2) * uint(sheet.nestNum1k) / (uint(sheet.ethNumBal) + uint(sheet.tokenNumBal));
-        // // Freeze nest and token
-        // uint accountIndex = _addressIndex(msg.sender);
-        // {
-        //     // 冻结资产：token0, token1, nest
-        //     mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
-        //     uint fee = msg.value;
+            // When the level of the sheet is less than 4, both the nest and the scale of the offer are doubled
+            if (level < uint(config.maxBiteNestedLevel)) {
+                // Double scale sheet
+                needEthNum = takeNum << 1;
+                ++level;
+            } 
+            // When the level of the sheet reaches 4 or more, nest doubles, but the scale does not
+            else {
+                // Single scale sheet
+                needEthNum = takeNum;
+                // It is possible that the length of a single chain exceeds 255. When the length of a chain reaches 4 
+                // or more, there is no logical dependence on the specific value of the contract, and the count will
+                // not increase after it is accumulated to 255
+                if (level < 255) ++level;
+            }
 
-        //     // 冻结token0
-        //     fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
-        //     // 冻结token1
-        //     fee = _freeze(
-        //         balances, 
-        //         pair.target, 
-        //         needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
-        //         fee
-        //     );
-        //     // 冻结nest
-        //     fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
-        //     require(fee == 0, "NOM:!fee");
-        // }
+            // 7. Calculate the price
+            // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
+            // is placed before the sheet is added, which can reduce unnecessary traversal
+            _stat(config, pair, sheets);
 
-        // // 6. Update the bitten sheet
-        // sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
-        // sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
-        // sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
-        // sheets[index] = sheet;
+            // 8. Create price sheet
+            //emit Post(channelId, msg.sender, sheets.length, needEthNum, newEquivalent);
+            _createPriceSheet(sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
+        }
 
-        // // 7. Calculate the price
-        // // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
-        // // is placed before the sheet is added, which can reduce unnecessary traversal
-        // _stat(config, pair, sheets);
+        // Freeze nest and token
+        {
+            // 冻结资产：token0, token1, nest
+            mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
+            uint fee = msg.value;
 
-        // // 8. Create price sheet
-        // //emit Post(channelId, msg.sender, sheets.length, needEthNum, newEquivalent);
-        // _createPriceSheet(sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
+            // 冻结token0
+            fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
+            // 冻结token1
+            fee = _freeze(
+                balances, 
+                pair.target, 
+                needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
+                fee
+            );
+            // 冻结nest
+            fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
+            require(fee == 0, "NOM:!fee");
+        }
+
+        // 6. Update the bitten sheet
+        sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
+        sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
+        sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
+        sheets[index] = sheet;
     }
 
     /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
@@ -467,82 +488,84 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
     function takeToken1(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable override {
 
-        // Config memory config = _config;
+        Config memory config = _config;
 
-        // // 1. Check arguments
-        // require(takeNum > 0, "NM:!takeNum");
-        // require(newEquivalent > 0, "NM:!price");
+        // 1. Check arguments
+        require(takeNum > 0, "NM:!takeNum");
+        require(newEquivalent > 0, "NM:!price");
 
-        // // 2. Load price sheet
-        // PriceChannel storage channel = _channels[channelId];
-        // PricePair storage pair = channel.pairs[pairIndex];
-        // PriceSheet[] storage sheets = pair.sheets;
-        // PriceSheet memory sheet = sheets[index];
+        // 2. Load price sheet
+        PriceChannel storage channel = _channels[channelId];
+        PricePair storage pair = channel.pairs[pairIndex];
+        PriceSheet[] storage sheets = pair.sheets;
+        PriceSheet memory sheet = sheets[index];
 
-        // // 3. Check state
-        // require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
-        // require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
+        // 3. Check state
+        require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
+        require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
 
-        // // 4. Deposit fee
+        uint accountIndex = _addressIndex(msg.sender);
+        // Number of nest to be pledged
+        //uint needNest1k = ((takeNum << 1) / uint(config.postEthUnit)) * uint(config.pledgeNest);
+        // sheet.ethNumBal + sheet.tokenNumBal is always two times to sheet.ethNum
+        uint needNest1k = (takeNum << 2) * uint(sheet.nestNum1k) / (uint(sheet.ethNumBal) + uint(sheet.tokenNumBal));
 
-        // // 5. Calculate the number of eth, token and nest needed, and freeze them
-        // uint needEthNum;
-        // uint level = uint(sheet.level);
+        // 4. Deposit fee
+        // 5. Calculate the number of eth, token and nest needed, and freeze them
+        uint needEthNum;
+        {
+            uint level = uint(sheet.level);
 
-        // // When the level of the sheet is less than 4, both the nest and the scale of the offer are doubled
-        // if (level < uint(config.maxBiteNestedLevel)) {
-        //     // Double scale sheet
-        //     needEthNum = takeNum << 1;
-        //     ++level;
-        // } 
-        // // When the level of the sheet reaches 4 or more, nest doubles, but the scale does not
-        // else {
-        //     // Single scale sheet
-        //     needEthNum = takeNum;
-        //     // It is possible that the length of a single chain exceeds 255. When the length of a chain reaches 4
-        //     // or more, there is no logical dependence on the specific value of the contract, and the count will
-        //     // not increase after it is accumulated to 255
-        //     if (level < 255) ++level;
-        // }
+            // When the level of the sheet is less than 4, both the nest and the scale of the offer are doubled
+            if (level < uint(config.maxBiteNestedLevel)) {
+                // Double scale sheet
+                needEthNum = takeNum << 1;
+                ++level;
+            } 
+            // When the level of the sheet reaches 4 or more, nest doubles, but the scale does not
+            else {
+                // Single scale sheet
+                needEthNum = takeNum;
+                // It is possible that the length of a single chain exceeds 255. When the length of a chain reaches 4
+                // or more, there is no logical dependence on the specific value of the contract, and the count will
+                // not increase after it is accumulated to 255
+                if (level < 255) ++level;
+            }
 
-        // // Number of nest to be pledged
-        // //uint needNest1k = ((takeNum << 1) / uint(config.postEthUnit)) * uint(config.pledgeNest);
-        // // sheet.ethNumBal + sheet.tokenNumBal is always two times to sheet.ethNum
-        // uint needNest1k = (takeNum << 2) * uint(sheet.nestNum1k) / (uint(sheet.ethNumBal) + uint(sheet.tokenNumBal));
-        // // Freeze nest and token
-        // uint accountIndex = _addressIndex(msg.sender);
-        // {
-        //     // 冻结资产：token0, token1, nest
-        //     mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
+            // 7. Calculate the price
+            // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
+            // is placed before the sheet is added, which can reduce unnecessary traversal
+            _stat(config, pair, sheets);
 
-        //     uint fee = msg.value;
-        //     // 冻结token0
-        //     fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
-        //     // 冻结token1
-        //     uint backTokenValue = _decodeFloat(sheet.priceFloat) * takeNum;
-        //     if (needEthNum * newEquivalent > backTokenValue) {
-        //         fee = _freeze(balances, pair.target, needEthNum * newEquivalent - backTokenValue, fee);
-        //     } else {
-        //         _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, msg.sender);
-        //     }
-        //     fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
-        //     require(fee == 0, "NOM:!fee");
-        // }
+            // 8. Create price sheet
+            //emit Post(channelId, msg.sender, sheets.length, needEthNum, newEquivalent);
+            _createPriceSheet(sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
+        }
+        
+        // Freeze nest and token
+        {
+            // 冻结资产：token0, token1, nest
+            mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
 
-        // // 6. Update the bitten sheet
-        // sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
-        // sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
-        // sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
-        // sheets[index] = sheet;
+            uint fee = msg.value;
+            // 冻结token0
+            fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
+            // 冻结token1
+            uint backTokenValue = _decodeFloat(sheet.priceFloat) * takeNum;
+            if (needEthNum * newEquivalent > backTokenValue) {
+                fee = _freeze(balances, pair.target, needEthNum * newEquivalent - backTokenValue, fee);
+            } else {
+                _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, msg.sender);
+            }
+            fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
+            require(fee == 0, "NOM:!fee");
+        }
 
-        // // 7. Calculate the price
-        // // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
-        // // is placed before the sheet is added, which can reduce unnecessary traversal
-        // _stat(config, pair, sheets);
-
-        // // 8. Create price sheet
-        // //emit Post(channelId, msg.sender, sheets.length, needEthNum, newEquivalent);
-        // _createPriceSheet(sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
+        // 6. Update the bitten sheet
+        sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
+        sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
+        sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
+        sheets[index] = sheet;
     }
 
     /// @dev List sheets by page
@@ -594,24 +617,75 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
     /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param pairIndices 报价对编号数组
     /// @param indices A list of indices of sheets w.r.t. `token`
-    function close(uint channelId, uint pairIndex, uint[] memory indices) external override {
+    function close(uint channelId, uint[] calldata pairIndices, uint[] calldata indices) external override {
         
+        //Config memory config = _config;
         PriceChannel storage channel = _channels[channelId];
-        PricePair storage pair = channel.pairs[pairIndex];
-        // Call _closeList() method to close price sheets
-        (
-            uint accountIndex,
-            Tuple memory total
-        ) = _closeList(_config, channel, pair, indices);
+        
+        // // Call _closeList() method to close price sheets
+        // (
+        //     uint accountIndex,
+        //     Tuple memory total
+        // ) = _closeList(_config, channel, pair, indices);
 
+            // uint rewardPerBlock = uint(channel.rewardPerBlock);
+            // uint genesisBlock = uint(channel.genesisBlock);
+            // uint reductionRate = uint(channel.reductionRate);
+
+        uint accountIndex = 0;
+        // TODO: storage变量必须在定义时初始化，因此在此处赋值，但是由于accountIndex此时为0，此赋值没有意义
         mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
+        Tuple memory total;
+
+        for (uint j = pairIndices.length; j > 0;) {
+            PricePair storage pair = channel.pairs[pairIndices[--j]];
+
+            ///////////////////////////////////////////////////////////////////////////////////////
+            PriceSheet[] storage sheets = pair.sheets;
+
+            // 1. Traverse sheets
+            for (uint i = indices.length; i > 0;) {
+
+                // Because too many variables need to be returned, too many variables will be defined, 
+                // so the structure of tuple is defined
+                (uint minerIndex, Tuple memory value) = _close(
+                    _config, 
+                    sheets, 
+                    indices[--i], 
+                    uint(channel.rewardPerBlock),
+                    uint(channel.genesisBlock),
+                    uint(channel.reductionRate)
+                );
+                // Batch closing quotation can only close sheet of the same user
+                if (accountIndex == 0) {
+                    // accountIndex == 0 means the first sheet, and the number of this sheet is taken
+                    accountIndex = minerIndex;
+                    balances = _accounts[accountIndex].balances;
+                } else {
+                    // accountIndex != 0 means that it is a follow-up sheet, and the miner number must be 
+                    // consistent with the previous record
+                    require(accountIndex == minerIndex, "NM:!miner");
+                }
+
+                total.ntokenValue += value.ntokenValue;
+                total.nestValue += value.nestValue;
+                total.ethNum += value.ethNum;
+                total.tokenValue += value.tokenValue;
+            }
+
+            _stat(_config, pair, sheets);
+            ///////////////////////////////////////////////////////////////////////////////////////
+
+            // 解冻token1
+            _unfreeze(balances, pair.target, uint(total.tokenValue), accountIndex);
+            total.tokenValue = 0;
+        }
 
         // 解冻token0
         _unfreeze(balances, channel.token0, uint(total.ethNum) * uint(channel.unit), accountIndex);
-        // 解冻token1
-        _unfreeze(balances, pair.target, uint(total.tokenValue), accountIndex);
+        
         // 解冻nest
         _unfreeze(balances, NEST_TOKEN_ADDRESS, uint(total.nestValue), accountIndex);
 
@@ -711,7 +785,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @dev The function returns eth rewards of specified ntoken
     /// @param channelId 报价通道编号
     function totalETHRewards(uint channelId) external view override returns (uint) {
-        return _channels[channelId].feeInfo;
+        return _channels[channelId].fee;
     }
 
     /// @dev Pay
@@ -722,7 +796,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:!governance");
-        channel.feeInfo -= value;
+        channel.fee -= value;
         // pay
         payable(to).transfer(value);
     }
@@ -734,7 +808,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:!governance");
-        channel.feeInfo -= value;
+        channel.fee -= value;
         INestLedger(INestMapping(_governance).getNestLedgerAddress()).addETHReward { value: value } (channelId);
     }
 
@@ -985,53 +1059,6 @@ contract NestBatchMining is NestBase, INestBatchMining {
             sheet.tokenNumBal = uint32(0);
             sheets[index] = sheet;
         }
-    }
-
-    // Batch close sheets
-    function _closeList(
-        Config memory config,
-        PriceChannel storage channel,
-        PricePair storage pair,
-        uint[] memory indices
-    ) private returns (uint accountIndex, Tuple memory total) {
-
-        PriceSheet[] storage sheets = pair.sheets;
-        accountIndex = 0; 
-
-        uint rewardPerBlock = uint(channel.rewardPerBlock);
-        uint genesisBlock = uint(channel.genesisBlock);
-        uint reductionRate = uint(channel.reductionRate);
-
-        // 1. Traverse sheets
-        for (uint i = indices.length; i > 0;) {
-
-            // Because too many variables need to be returned, too many variables will be defined, 
-            // so the structure of tuple is defined
-            (uint minerIndex, Tuple memory value) = _close(
-                config, 
-                sheets, 
-                indices[--i], 
-                rewardPerBlock,
-                genesisBlock,
-                reductionRate
-            );
-            // Batch closing quotation can only close sheet of the same user
-            if (accountIndex == 0) {
-                // accountIndex == 0 means the first sheet, and the number of this sheet is taken
-                accountIndex = minerIndex;
-            } else {
-                // accountIndex != 0 means that it is a follow-up sheet, and the miner number must be 
-                // consistent with the previous record
-                require(accountIndex == minerIndex, "NM:!miner");
-            }
-
-            total.ntokenValue += value.ntokenValue;
-            total.nestValue += value.nestValue;
-            total.ethNum += value.ethNum;
-            total.tokenValue += value.tokenValue;
-        }
-
-        _stat(config, pair, sheets);
     }
 
     // Calculation number of blocks which mined

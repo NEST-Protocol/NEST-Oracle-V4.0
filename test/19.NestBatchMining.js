@@ -116,7 +116,7 @@ describe('NestOpenMining', function() {
 
             console.log('1. wait 20 and close');
             await skipBlocks(EFFECT_BLOCK);
-            await nestBatchMining.close(0, 0, [0]);
+            await nestBatchMining.close(0, [0], [0]);
         }
 
         if (true) {
