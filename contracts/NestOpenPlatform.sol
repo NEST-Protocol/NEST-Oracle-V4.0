@@ -109,9 +109,10 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
     }
 
     // Payment of transfer fee
-    function _pay(PriceChannel storage channel, uint fee, address payback) private {
+    function _pay(uint channelId, address payback) private returns (PriceChannel storage channel) {
 
-        fee = fee * DIMI_ETHER;
+        channel = _channels[channelId];
+        uint fee = uint(channel.singleFee) * DIMI_ETHER;
         if (msg.value > fee) {
             //payable(payback).transfer(msg.value - fee);
             TransferHelper.safeTransferETH(payback, msg.value - fee);
@@ -134,9 +135,7 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint blockNumber, 
         uint price
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _triggeredPrice(channel);
+        return _triggeredPrice(_pay(channelId, payback));
     }
 
     /// @dev Get the full information of latest trigger price
@@ -157,9 +156,7 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint avgPrice,
         uint sigmaSQ
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _triggeredPriceInfo(channel);
+        return _triggeredPriceInfo(_pay(channelId, payback));
     }
 
     /// @dev Find the price at block number
@@ -176,9 +173,7 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint blockNumber, 
         uint price
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _findPrice(channel, height);
+        return _findPrice(_pay(channelId, payback), height);
     }
 
     /// @dev Get the latest effective price
@@ -193,9 +188,7 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint blockNumber, 
         uint price
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _latestPrice(channel);
+        return _latestPrice(_pay(channelId, payback));
     }
 
     /// @dev Get the last (num) effective price
@@ -208,9 +201,7 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint count, 
         address payback
     ) external payable override returns (uint[] memory) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _lastPriceList(channel, count);
+        return _lastPriceList(_pay(channelId, payback), count);
     }
 
     /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
@@ -233,9 +224,7 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint triggeredAvgPrice,
         uint triggeredSigmaSQ
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _latestPriceAndTriggeredPriceInfo(channel);
+        return _latestPriceAndTriggeredPriceInfo(_pay(channelId, payback));
     }
 
     /// @dev Returns lastPriceList and triggered price info
@@ -260,8 +249,6 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint triggeredAvgPrice,
         uint triggeredSigmaSQ
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _lastPriceListAndTriggeredPriceInfo(channel, count);
+        return _lastPriceListAndTriggeredPriceInfo(_pay(channelId, payback), count);
     }
 }

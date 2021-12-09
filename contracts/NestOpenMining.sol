@@ -372,6 +372,12 @@ contract NestOpenMining is NestBase, INestOpenMining {
         require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
         require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
 
+        // 6. Update the bitten sheet
+        sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
+        sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
+        sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
+        sheets[index] = sheet;
+
         // 4. Deposit fee
         // 5. Calculate the number of eth, token and nest needed, and freeze them
         uint needEthNum;
@@ -418,12 +424,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
             require(fee == 0, "NOM:!fee");
         }
 
-        // 6. Update the bitten sheet
-        sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
-        sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
-        sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
-        sheets[index] = sheet;
-
         // 7. Calculate the price
         // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
         // is placed before the sheet is added, which can reduce unnecessary traversal
@@ -456,6 +456,12 @@ contract NestOpenMining is NestBase, INestOpenMining {
         // 3. Check state
         require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
         require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
+
+        // 6. Update the bitten sheet
+        sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
+        sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
+        sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
+        sheets[index] = sheet;
 
         // 4. Deposit fee
 
@@ -502,12 +508,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
             fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
             require(fee == 0, "NOM:!fee");
         }
-
-        // 6. Update the bitten sheet
-        sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
-        sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
-        sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
-        sheets[index] = sheet;
 
         // 7. Calculate the price
         // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
