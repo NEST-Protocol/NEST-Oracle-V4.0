@@ -127,9 +127,10 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
     }
 
     // Payment of transfer fee
-    function _pay(PriceChannel storage channel, uint fee, address payback) private {
+    function _pay(uint channelId, address payback) private returns (PriceChannel storage channel) {
 
-        fee = fee * DIMI_ETHER;
+        channel = _channels[channelId];
+        uint fee = uint(channel.singleFee) * DIMI_ETHER;
         if (msg.value > fee) {
             //payable(payback).transfer(msg.value - fee);
             TransferHelper.safeTransferETH(payback, msg.value - fee);
@@ -149,11 +150,8 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         uint channelId,
         uint[] calldata pairIndices, 
         address payback
-    ) external payable returns (
-        uint[] memory prices
-    ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
+    ) external payable returns (uint[] memory prices) {
+        PriceChannel storage channel = _pay(channelId, payback);
 
         uint n = pairIndices.length << 1;
         prices = new uint[](n);
@@ -175,8 +173,7 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
     ) external payable returns (
         uint[] memory prices
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
+        PriceChannel storage channel = _pay(channelId, payback);
 
         uint n = pairIndices.length << 2;
         prices = new uint[](n);
@@ -188,59 +185,70 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
 
     /// @dev Find the price at block number
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param pairIndices 报价对编号
     /// @param height Destination block number
     /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
+    /// @return prices 价格数组, i * 2 为第i个价格所在区块, i * 2 + 1 为第i个价格
     function findPrice(
         uint channelId,
-        uint pairIndex,
+        uint[] calldata pairIndices, 
         uint height, 
         address payback
-    ) external payable returns (
-        uint blockNumber, 
-        uint price
-    ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _findPrice(channel.pairs[pairIndex], height);
+    ) external payable returns (uint[] memory prices) {
+        PriceChannel storage channel = _pay(channelId, payback);
+
+        uint n = pairIndices.length << 1;
+        prices = new uint[](n);
+        while (n > 0) {
+            n -= 2;
+            (prices[n], prices[n + 1]) = _findPrice(channel.pairs[n >> 1], height);
+        }
     }
 
     /// @dev Get the latest effective price
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param pairIndices 报价对编号
     /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
+    /// @return prices 价格数组, i * 2 为第i个价格所在区块, i * 2 + 1 为第i个价格
     function latestPrice(
         uint channelId, 
-        uint pairIndex,
+        uint[] calldata pairIndices, 
         address payback
-    ) external payable returns (
-        uint blockNumber, 
-        uint price
-    ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _latestPrice(channel.pairs[pairIndex]);
+    ) external payable returns (uint[] memory prices) {
+        PriceChannel storage channel = _pay(channelId, payback);
+
+        uint n = pairIndices.length << 1;
+        prices = new uint[](n);
+        while (n > 0) {
+            n -= 2;
+            (prices[n], prices[n + 1]) = _latestPrice(channel.pairs[n >> 1]);
+        }
     }
 
     /// @dev Get the last (num) effective price
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param pairIndices 报价对编号
     /// @param count The number of prices that want to return
     /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return prices 结果数组，第 i * count * 2 到 (i + 1) * count * 2 - 1为第i组报价对的价格结果
     function lastPriceList(
         uint channelId, 
-        uint pairIndex,
+        uint[] calldata pairIndices, 
         uint count, 
         address payback
-    ) external payable returns (uint[] memory) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _lastPriceList(channel.pairs[pairIndex], count);
+    ) external payable returns (uint[] memory prices) {
+        PriceChannel storage channel = _pay(channelId, payback);
+
+        uint row = count << 1;
+        uint n = pairIndices.length * row;
+        prices = new uint[](n);
+        while (n > 0) {
+            n -= row;
+            uint[] memory pi = _lastPriceList(channel.pairs[n / row], count);
+            for (uint i = 0; i < row; ++i) {
+                prices[n + i] = pi[i];
+            }
+        }
     }
 
     // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
@@ -271,38 +279,37 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
 
     /// @dev Returns lastPriceList and triggered price info
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param pairIndices 报价对编号
     /// @param count The number of prices that want to return
     /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
-    /// @return triggeredPriceBlockNumber The block number of triggered price
-    /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    /// @return triggeredAvgPrice Average price
-    /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
+    /// @return prices 结果数组，第 i * (count * 2 + 4)到 (i + 1) * (count * 2 + 4)- 1为第i组报价对的价格结果
+    ///         其中前count * 2个为最新价格，后4个依次为：触发价格区块号，触发价格，平均价格，波动率
     function lastPriceListAndTriggeredPriceInfo(
         uint channelId, 
-        uint pairIndex,
+        uint[] calldata pairIndices,
         uint count, 
         address payback
-    ) external payable returns (
-        uint[] memory prices,
-        uint triggeredPriceBlockNumber,
-        uint triggeredPriceValue,
-        uint triggeredAvgPrice,
-        uint triggeredSigmaSQ
-    ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        //return _lastPriceListAndTriggeredPriceInfo(channel.pairs[pairIndex], count);
-        PricePair storage pair = _channels[channelId].pairs[pairIndex];
-        prices = _lastPriceList(pair, count);
-        (
-            triggeredPriceBlockNumber, 
-            triggeredPriceValue, 
-            triggeredAvgPrice, 
-            triggeredSigmaSQ
-        ) = _triggeredPriceInfo(pair);
+    ) external payable returns (uint[] memory prices) {
+        PriceChannel storage channel = _pay(channelId, payback);
+
+        uint row = (count << 1) + 4;
+        uint n = pairIndices.length * row;
+        prices = new uint[](n);
+        while (n > 0) {
+            n -= row;
+
+            PricePair storage pair = channel.pairs[n / row];
+            uint[] memory pi = _lastPriceList(pair, count);
+            for (uint i = 0; i + 4 < row; ++i) {
+                prices[n + i] = pi[i];
+            }
+            uint j = n + row - 4;
+            (
+                prices[j],
+                prices[j + 1],
+                prices[j + 2],
+                prices[j + 3]
+            ) = _triggeredPriceInfo(pair);
+        }
     }
 }

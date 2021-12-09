@@ -551,20 +551,9 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
             // 冻结nest
             fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
-            if (pairIndex >= 0) {
-                // 冻结token0
-                fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
-                // 冻结token1
-                fee = _freeze(
-                    balances, 
-                    pair.target, 
-                    needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
-                    fee
-                );
-                
-                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
-                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
-            } else {
+            // 当吃单方向为拿走计价代币时，直接传报价对编号，当吃单方向为拿走报价代币时，传报价对编号减65536
+            // pairIndex < 0，吃单方向为拿走报价代币
+            if (pairIndex < 0) {
                 // 冻结token0
                 fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
                 // 冻结token1
@@ -577,6 +566,21 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
                 sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
                 sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
+            } 
+            // pairIndex >= 0，吃单方向为拿走计价代币
+            else {
+                // 冻结token0
+                fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
+                // 冻结token1
+                fee = _freeze(
+                    balances, 
+                    pair.target, 
+                    needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
+                    fee
+                );
+                
+                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
+                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
             }
             
             require(fee == 0, "NOM:!fee");
