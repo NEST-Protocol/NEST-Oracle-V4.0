@@ -12,8 +12,6 @@ import "./NestBatchMining.sol";
 /// @dev This contract implemented the mining logic of nest
 contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPrice {
 
-    // TODO: 支持pairIndex数组，可以一次性查询多个价格
-
     /// @dev Get the latest trigger price
     /// @param channelId 报价通道编号
     /// @param pairIndex 报价对编号
@@ -127,9 +125,10 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
     }
 
     // Payment of transfer fee
-    function _pay(PriceChannel storage channel, uint fee, address payback) private {
+    function _pay(uint channelId, address payback) private returns (PriceChannel storage channel) {
 
-        fee = fee * DIMI_ETHER;
+        channel = _channels[channelId];
+        uint fee = uint(channel.singleFee) * DIMI_ETHER;
         if (msg.value > fee) {
             //payable(payback).transfer(msg.value - fee);
             TransferHelper.safeTransferETH(payback, msg.value - fee);
@@ -154,9 +153,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint blockNumber, 
         uint price
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _triggeredPrice(channel.pairs[pairIndex]);
+        return _triggeredPrice(_pay(channelId, payback).pairs[pairIndex]);
     }
 
     /// @dev Get the full information of latest trigger price
@@ -179,9 +176,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint avgPrice,
         uint sigmaSQ
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _triggeredPriceInfo(channel.pairs[pairIndex]);
+        return _triggeredPriceInfo(_pay(channelId, payback).pairs[pairIndex]);
     }
 
     /// @dev Find the price at block number
@@ -200,9 +195,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint blockNumber, 
         uint price
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _findPrice(channel.pairs[pairIndex], height);
+        return _findPrice(_pay(channelId, payback).pairs[pairIndex], height);
     }
 
     /// @dev Get the latest effective price
@@ -219,9 +212,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint blockNumber, 
         uint price
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _latestPrice(channel.pairs[pairIndex]);
+        return _latestPrice(_pay(channelId, payback).pairs[pairIndex]);
     }
 
     /// @dev Get the last (num) effective price
@@ -236,9 +227,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint count, 
         address payback
     ) external payable override returns (uint[] memory) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _lastPriceList(channel.pairs[pairIndex], count);
+        return _lastPriceList(_pay(channelId, payback).pairs[pairIndex], count);
     }
 
     // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
@@ -291,10 +280,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint triggeredAvgPrice,
         uint triggeredSigmaSQ
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        //return _lastPriceListAndTriggeredPriceInfo(channel.pairs[pairIndex], count);
-        PricePair storage pair = _channels[channelId].pairs[pairIndex];
+        PricePair storage pair = _pay(channelId, payback).pairs[pairIndex];
         prices = _lastPriceList(pair, count);
         (
             triggeredPriceBlockNumber, 

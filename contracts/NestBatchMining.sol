@@ -543,6 +543,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
             _createPriceSheet(sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
         }
 
+        // TODO: 将创建报价单操作放到冻结资产前面，是否可能导致重入攻击，超额吃单？
         // Freeze nest and token
         {
             // 冻结资产：token0, token1, nest

@@ -9,6 +9,7 @@ import "./interface/INestBatchPrice.sol";
 
 import "./NestBatchMining.sol";
 
+// 支持pairIndex数组，可以一次性查询多个价格
 /// @dev This contract implemented the mining logic of nest
 contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
 
