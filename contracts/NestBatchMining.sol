@@ -623,22 +623,21 @@ contract NestBatchMining is NestBase, INestBatchMining {
         //Config memory config = _config;
         PriceChannel storage channel = _channels[channelId];
         
-        // // Call _closeList() method to close price sheets
-        // (
-        //     uint accountIndex,
-        //     Tuple memory total
-        // ) = _closeList(_config, channel, pair, indices);
-
-        //uint rewardPerBlock = uint(channel.rewardPerBlock);
-        //uint genesisBlock = uint(channel.genesisBlock);
-        //uint reductionRate = uint(channel.reductionRate);
-        uint reward = 0;
-
         uint accountIndex = 0;
-        // TODO: storage变量必须在定义时初始化，因此在此处赋值，但是由于accountIndex此时为0，此赋值没有意义
-        mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
-        // TODO: 不用Tuple?
-        Tuple memory total;
+        uint reward = 0;
+        // storage变量必须在定义时初始化，因此在此处赋值，但是由于accountIndex此时为0，此赋值没有意义
+        mapping(address=>UINT) storage balances = _accounts[0/*accountIndex*/].balances;
+        uint[6] memory vars = [
+            uint(channel.rewardPerBlock), 
+            uint(channel.genesisBlock), 
+            uint(channel.reductionRate),
+            // nestNum1k
+            0, 
+            // ethNum
+            0, 
+            // tokenValue
+            0
+        ];
 
         for (uint j = indices.length; j > 0;) {
             PricePair storage pair = channel.pairs[--j];
@@ -651,15 +650,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
                 // Because too many variables need to be returned, too many variables will be defined, 
                 // so the structure of tuple is defined
-                (uint minerIndex, Tuple memory value) = _close(
-                    _config, 
-                    sheets, 
-                    indices[j][--i]//, 
-                    // TODO：优化之
-                    // rewardPerBlock,
-                    // genesisBlock,
-                    // reductionRate
-                );
+                (uint minerIndex, Tuple memory value) = _close(_config, sheets, indices[j][--i]);
                 // Batch closing quotation can only close sheet of the same user
                 if (accountIndex == 0) {
                     // accountIndex == 0 means the first sheet, and the number of this sheet is taken
@@ -671,66 +662,48 @@ contract NestBatchMining is NestBase, INestBatchMining {
                     require(accountIndex == minerIndex, "NM:!miner");
                 }
 
-                // TODO: 后面的通道不出矿，不需要出矿逻辑
+                // 后面的通道不出矿，不需要出矿逻辑
                 // 出矿按照第一个通道计算
                 if (j == 0 && uint(value.share) > 0) {
-                    //total.ntokenValue += value.ntokenValue;
-
                     // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
                     // 这种情况是不合理的，需要由开通者负责
                     reward += (
                         uint(value.mined)
                         * uint(value.share)
-                        * _reduction(uint(value.height) - uint(channel.genesisBlock), uint(channel.reductionRate))
-                        * uint(channel.rewardPerBlock)
+                        * _reduction(uint(value.height) - vars[1], vars[2])
+                        * vars[0]
                         / uint(value.totalShares) / 400
                     );
                 }
-                total.nestNum1k += value.nestNum1k;
-                total.ethNum += value.ethNum;
-                total.tokenValue += value.tokenValue;
+                vars[3] += uint(value.nestNum1k);
+                vars[4] += uint(value.ethNum);
+                vars[5] += uint(value.tokenValue);
             }
 
             _stat(_config, pair, sheets);
             ///////////////////////////////////////////////////////////////////////////////////////
 
             // 解冻token1
-            _unfreeze(balances, pair.target, uint(total.tokenValue), accountIndex);
-            total.tokenValue = 0;
+            _unfreeze(balances, pair.target, vars[5], accountIndex);
+            vars[5] = 0;
         }
 
         // 解冻token0
-        _unfreeze(balances, channel.token0, uint(total.ethNum) * uint(channel.unit), accountIndex);
+        _unfreeze(balances, channel.token0, vars[4] * uint(channel.unit), accountIndex);
         
         // 解冻nest
-        _unfreeze(balances, NEST_TOKEN_ADDRESS, uint(total.nestNum1k) * 1000 ether, accountIndex);
+        _unfreeze(balances, NEST_TOKEN_ADDRESS, vars[3] * 1000 ether, accountIndex);
 
         uint vault = uint(channel.vault);
-        //uint ntokenValue = uint(total.ntokenValue);
         if (reward > vault) {
             reward = vault;
         }
         // 记录每个通道矿币的数量，防止开通者不打币，直接用资金池内的资金
         channel.vault = uint96(vault - reward);
-        // if (total.ntokenValue > channel.vault) {
-        //     total.ntokenValue = channel.vault;
-        //     channel.vault = uint96(0);
-        // } else {
-        //     channel.vault -= total.ntokenValue;
-        // }
         
         // 奖励矿币
         _unfreeze(balances, channel.reward, reward, accountIndex);
     }
-
-    // /// @dev The function updates the statistics of price sheets
-    // ///     It calculates from priceInfo to the newest that is effective.
-    // /// @param channelId 报价通道编号
-    // /// @param pairIndex 报价对编号
-    // function stat(uint channelId, uint pairIndex) external override {
-    //     PricePair storage pair = _channels[channelId].pairs[pairIndex];
-    //     _stat(_config, pair, pair.sheets);
-    // }
 
     /// @dev View the number of assets specified by the user
     /// @param tokenAddress Destination token address
@@ -1030,13 +1003,12 @@ contract NestBatchMining is NestBase, INestBatchMining {
     // This structure is for the _close() method to return multiple values
     struct Tuple {
         uint tokenValue;
-        uint64 ethNum;
-        uint24 nestNum1k;
-        //uint96 ntokenValue;
         uint32 mined;
         uint32 share;
         uint32 totalShares;
         uint32 height;
+        uint32 ethNum;
+        uint24 nestNum1k;
     }
 
     // Close price sheet
@@ -1079,7 +1051,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
             }
 
             value.nestNum1k = sheet.nestNum1k; //uint96(uint(sheet.nestNum1k) * 1000 ether);
-            value.ethNum = uint64(sheet.ethNumBal);
+            value.ethNum = sheet.ethNumBal;
             value.tokenValue = _decodeFloat(sheet.priceFloat) * uint(sheet.tokenNumBal);
 
             // Set sheet.miner to 0, express the sheet is closed
@@ -1484,26 +1456,25 @@ contract NestBatchMining is NestBase, INestBatchMining {
         return array;
     } 
 
-    // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
+    // /// @dev Returns lastPriceList and triggered price info
     // /// @param pair 报价对
-    // /// @return latestPriceBlockNumber The block number of latest price
-    // /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
+    // /// @param count The number of prices that want to return
+    // /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
     // /// @return triggeredPriceBlockNumber The block number of triggered price
     // /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     // /// @return triggeredAvgPrice Average price
     // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
     // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
     // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    // function _latestPriceAndTriggeredPriceInfo(PricePair storage pair) internal view 
+    // function _lastPriceListAndTriggeredPriceInfo(PricePair storage pair, uint count) internal view
     // returns (
-    //     uint latestPriceBlockNumber,
-    //     uint latestPriceValue,
+    //     uint[] memory prices,
     //     uint triggeredPriceBlockNumber,
     //     uint triggeredPriceValue,
     //     uint triggeredAvgPrice,
     //     uint triggeredSigmaSQ
     // ) {
-    //     (latestPriceBlockNumber, latestPriceValue) = _latestPrice(pair);
+    //     prices = _lastPriceList(pair, count);
     //     (
     //         triggeredPriceBlockNumber, 
     //         triggeredPriceValue, 
@@ -1511,31 +1482,4 @@ contract NestBatchMining is NestBase, INestBatchMining {
     //         triggeredSigmaSQ
     //     ) = _triggeredPriceInfo(pair);
     // }
-
-    /// @dev Returns lastPriceList and triggered price info
-    /// @param pair 报价对
-    /// @param count The number of prices that want to return
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
-    /// @return triggeredPriceBlockNumber The block number of triggered price
-    /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    /// @return triggeredAvgPrice Average price
-    /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    function _lastPriceListAndTriggeredPriceInfo(PricePair storage pair, uint count) internal view
-    returns (
-        uint[] memory prices,
-        uint triggeredPriceBlockNumber,
-        uint triggeredPriceValue,
-        uint triggeredAvgPrice,
-        uint triggeredSigmaSQ
-    ) {
-        prices = _lastPriceList(pair, count);
-        (
-            triggeredPriceBlockNumber, 
-            triggeredPriceValue, 
-            triggeredAvgPrice, 
-            triggeredSigmaSQ
-        ) = _triggeredPriceInfo(pair);
-    }
 }

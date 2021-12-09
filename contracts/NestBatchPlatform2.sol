@@ -10,7 +10,7 @@ import "./interface/INestBatchPrice.sol";
 import "./NestBatchMining.sol";
 
 /// @dev This contract implemented the mining logic of nest
-contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPrice {
+contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
 
     // TODO: 支持pairIndex数组，可以一次性查询多个价格
 
@@ -142,46 +142,48 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
 
     /// @dev Get the latest trigger price
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param pairIndices 报价对编号
     /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
+    /// @return prices 价格数组, i * 2 为第i个价格所在区块, i * 2 + 1 为第i个价格
     function triggeredPrice(
         uint channelId,
-        uint pairIndex, 
+        uint[] calldata pairIndices, 
         address payback
-    ) external payable override returns (
-        uint blockNumber, 
-        uint price
+    ) external payable returns (
+        uint[] memory prices
     ) {
         PriceChannel storage channel = _channels[channelId];
         _pay(channel, uint(channel.singleFee), payback);
-        return _triggeredPrice(channel.pairs[pairIndex]);
+
+        uint n = pairIndices.length << 1;
+        prices = new uint[](n);
+        while (n > 0) {
+            n -= 2;
+            (prices[n], prices[n + 1]) = _triggeredPrice(channel.pairs[n >> 1]);
+        }
     }
 
     /// @dev Get the full information of latest trigger price
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param pairIndices 报价对编号
     /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    /// @return avgPrice Average price
-    /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that 
-    ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447,
-    ///         it means that the volatility has exceeded the range that can be expressed
+    /// @return prices 价格数组, i * 4 为第i个价格所在区块, i * 4 + 1 为第i个价格, i * 4 + 2 为第i个平均价格, i * 4 + 3 为第i个波动率
     function triggeredPriceInfo(
         uint channelId, 
-        uint pairIndex,
+        uint[] calldata pairIndices,
         address payback
-    ) external payable override returns (
-        uint blockNumber,
-        uint price,
-        uint avgPrice,
-        uint sigmaSQ
+    ) external payable returns (
+        uint[] memory prices
     ) {
         PriceChannel storage channel = _channels[channelId];
         _pay(channel, uint(channel.singleFee), payback);
-        return _triggeredPriceInfo(channel.pairs[pairIndex]);
+
+        uint n = pairIndices.length << 2;
+        prices = new uint[](n);
+        while (n > 0) {
+            n -= 2;
+            (prices[n], prices[n + 1], prices[n + 2], prices[n + 3]) = _triggeredPriceInfo(channel.pairs[n >> 2]);
+        }
     }
 
     /// @dev Find the price at block number
@@ -196,7 +198,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint pairIndex,
         uint height, 
         address payback
-    ) external payable override returns (
+    ) external payable returns (
         uint blockNumber, 
         uint price
     ) {
@@ -215,7 +217,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint channelId, 
         uint pairIndex,
         address payback
-    ) external payable override returns (
+    ) external payable returns (
         uint blockNumber, 
         uint price
     ) {
@@ -235,7 +237,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint pairIndex,
         uint count, 
         address payback
-    ) external payable override returns (uint[] memory) {
+    ) external payable returns (uint[] memory) {
         PriceChannel storage channel = _channels[channelId];
         _pay(channel, uint(channel.singleFee), payback);
         return _lastPriceList(channel.pairs[pairIndex], count);
@@ -284,7 +286,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         uint pairIndex,
         uint count, 
         address payback
-    ) external payable override returns (
+    ) external payable returns (
         uint[] memory prices,
         uint triggeredPriceBlockNumber,
         uint triggeredPriceValue,
