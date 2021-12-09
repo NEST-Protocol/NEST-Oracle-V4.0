@@ -215,23 +215,32 @@ interface INestBatchMining {
     /// @param equivalent 与单位token0等价的token1数量
     function post(uint channelId, uint scale, uint[] calldata equivalent) external payable;
 
-    /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
-    /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
-    /// @param index The position of the sheet in priceSheetList[token]
-    /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
-    /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
-    function takeToken0(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable;
+    // /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
+    // /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
+    // /// @param channelId 报价通道编号
+    // /// @param pairIndex 报价对编号
+    // /// @param index The position of the sheet in priceSheetList[token]
+    // /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
+    // /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
+    // function takeToken0(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable;
+
+    // /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
+    // /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
+    // /// @param channelId The address of token(ntoken)
+    // /// @param pairIndex 报价对编号
+    // /// @param index The position of the sheet in priceSheetList[token]
+    // /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
+    // /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
+    // function takeToken1(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable;
 
     /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
     /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
-    /// @param channelId The address of token(ntoken)
-    /// @param pairIndex 报价对编号
+    /// @param channelId 报价通道编号
+    /// @param pairIndex 报价对编号。当吃单方向为拿走计价代币时，直接传报价对编号，当吃单方向为拿走报价代币时，传报价对编号减65536
     /// @param index The position of the sheet in priceSheetList[token]
     /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
     /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
-    function takeToken1(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable;
+    function take(uint channelId, int pairIndex, uint index, uint takeNum, uint newEquivalent) external payable;
 
     /// @dev List sheets by page
     /// @param channelId 报价通道编号
