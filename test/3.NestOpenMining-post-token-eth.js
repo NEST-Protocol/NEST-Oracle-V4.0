@@ -10,7 +10,7 @@ describe('NestOpenMining', function() {
             nest, usdt, hbtc,
 
             nestGovernance, nestLedger,
-            nestMining, nestOpenMining,
+            nestMining, nestBatchMining,
             nestPriceFacade, nestVote,
             nTokenController, nestRedeeming
         } = await deploy();
@@ -30,7 +30,7 @@ describe('NestOpenMining', function() {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await getAccountInfo(owner),
                 addr1: await getAccountInfo(addr1),
-                mining: await getAccountInfo(nestOpenMining)
+                mining: await getAccountInfo(nestBatchMining)
             };
         };
 
@@ -53,22 +53,22 @@ describe('NestOpenMining', function() {
         await nest.transfer(addr1.address, 1000000000000000000000000000n);
         console.log(await getStatus());
 
-        await nest.approve(nestOpenMining.address, 10000000000000000000000000000n);
-        await usdt.approve(nestOpenMining.address, 10000000000000000000000000n);
-        await hbtc.approve(nestOpenMining.address, 10000000000000000000000000n);
-        await nest.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000000n);
-        await usdt.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000n);
-        await hbtc.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000n);
+        await nest.approve(nestBatchMining.address, 10000000000000000000000000000n);
+        await usdt.approve(nestBatchMining.address, 10000000000000000000000000n);
+        await hbtc.approve(nestBatchMining.address, 10000000000000000000000000n);
+        await nest.connect(addr1).approve(nestBatchMining.address, 10000000000000000000000000000n);
+        await usdt.connect(addr1).approve(nestBatchMining.address, 10000000000000000000000000n);
+        await hbtc.connect(addr1).approve(nestBatchMining.address, 10000000000000000000000000n);
 
-        //await nestOpenMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
-        await nestOpenMining.open({
+        //await nestBatchMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
+        await nestBatchMining.open({
             // 计价代币地址, 0表示eth
             token0: '0x0000000000000000000000000000000000000000',
             // 计价代币单位
             unit: 1000000000000000000n,
     
             // 报价代币地址，0表示eth
-            token1: usdt.address,
+            //token1: usdt.address,
             // 每个区块的标准出矿量
             rewardPerBlock: 1000000000000000000n,
     
@@ -87,9 +87,11 @@ describe('NestOpenMining', function() {
             // Single query fee (0.0001 ether, DIMI_ETHER). 100
             singleFee: 100,
             // 衰减系数，万分制。8000
-            reductionRate: 8000
+            reductionRate: 8000,
+
+            tokens: [usdt.address]
         });
-        await nestOpenMining.increase(0, 5000000000000000000000000000n);
+        await nestBatchMining.increase(0, 5000000000000000000000000000n);
         console.log(await getStatus());
 
         const GASLIMIT = 400000n;
@@ -99,7 +101,7 @@ describe('NestOpenMining', function() {
 
         if (true) {
             console.log('1. post');
-            let receipt = await nestOpenMining.post(0, 1, 4300000000n, {
+            let receipt = await nestBatchMining.post(0, 1, [4300000000n], {
                 value: toBigInt(POSTFEE + 1) + 1000000000n * GASLIMIT
             });
             await showReceipt(receipt);
@@ -110,17 +112,17 @@ describe('NestOpenMining', function() {
             expect(status.mining.nest).to.eq(toDecimal(5000000000000000000000000000n + OPEN_FEE + 100000000000000000000000n));
             expect(status.mining.eth).to.eq(toDecimal(toBigInt(POSTFEE) + 1000000000n * GASLIMIT + toBigInt(1)));
             
-            expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(0, 6));
-            expect(toDecimal(await nestOpenMining.balanceOf(nest.address, owner.address))).eq(toDecimal(0));
+            expect(toDecimal(await nestBatchMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(0, 6));
+            expect(toDecimal(await nestBatchMining.balanceOf(nest.address, owner.address))).eq(toDecimal(0));
 
             console.log('sheets: ');
-            let sheets = await nestOpenMining.list(0, 0, 2, 0);
+            let sheets = await nestBatchMining.list(0, 0, 0, 2, 0);
             for (var i = 0; i < sheets.length; ++i) {
                 console.log(UI(sheets[i]));
             }
             
             console.log('1. close');
-            await nestOpenMining.close(0, [0]);
+            await nestBatchMining.close(0, [[0]]);
             status = await showStatus();
             expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 4300000000n, 6));
             expect(status.owner.nest).to.eq(toDecimal(4000000000000000000000000000n - OPEN_FEE - 100000000000000000000000n));
@@ -128,12 +130,12 @@ describe('NestOpenMining', function() {
             expect(status.mining.nest).to.eq(toDecimal(5000000000000000000000000000n + OPEN_FEE + 100000000000000000000000n));
             expect(status.mining.eth).to.eq(toDecimal(toBigInt(POSTFEE) + 1000000000n * GASLIMIT + toBigInt(1)));
             
-            expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(0, 6));
-            expect(toDecimal(await nestOpenMining.balanceOf(nest.address, owner.address))).eq(toDecimal(0));
+            expect(toDecimal(await nestBatchMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(0, 6));
+            expect(toDecimal(await nestBatchMining.balanceOf(nest.address, owner.address))).eq(toDecimal(0));
 
             console.log('1. wait 20 and close');
             await skipBlocks(EFFECT_BLOCK);
-            await nestOpenMining.close(0, [0]);
+            await nestBatchMining.close(0, [[0]]);
             status = await showStatus();
             expect(status.owner.usdt).to.eq(toDecimal(10000000000000n - 4300000000n, 6));
             expect(status.owner.nest).to.eq(toDecimal(4000000000000000000000000000n - OPEN_FEE - 100000000000000000000000n));
@@ -141,18 +143,18 @@ describe('NestOpenMining', function() {
             expect(status.mining.nest).to.eq(toDecimal(5000000000000000000000000000n + OPEN_FEE + 100000000000000000000000n));
             expect(status.mining.eth).to.eq(toDecimal(toBigInt(POSTFEE) + 1000000000n * GASLIMIT));
             
-            expect(toDecimal(await nestOpenMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(4300000000n, 6));
-            expect(toDecimal(await nestOpenMining.balanceOf(nest.address, owner.address))).eq(toDecimal(100000000000000000000000n + 10000000000000000000n));
+            expect(toDecimal(await nestBatchMining.balanceOf(usdt.address, owner.address), 6)).eq(toDecimal(4300000000n, 6));
+            expect(toDecimal(await nestBatchMining.balanceOf(nest.address, owner.address))).eq(toDecimal(100000000000000000000000n + 10000000000000000000n));
 
             console.log('sheets: ');
-            sheets = await nestOpenMining.list(0, 0, 2, 0);
+            sheets = await nestBatchMining.list(0, 0, 0, 2, 0);
             for (var i = 0; i < sheets.length; ++i) {
                 console.log(sheets[i]);
             }
 
             console.log('price: ');
-            let nestPrice = await ethers.getContractAt('INestPriceView', nestOpenMining.address);
-            let price = await nestPrice.triggeredPriceInfo(0);
+            let nestPrice = await ethers.getContractAt('INestBatchPriceView', nestBatchMining.address);
+            let price = await nestPrice.triggeredPriceInfo(0, 0);
             console.log(UI(price));
         }
     });

@@ -673,7 +673,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
                 // TODO: 后面的通道不出矿，不需要出矿逻辑
                 // 出矿按照第一个通道计算
-                if (j == 0) {
+                if (j == 0 && uint(value.share) > 0) {
                     //total.ntokenValue += value.ntokenValue;
 
                     // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少

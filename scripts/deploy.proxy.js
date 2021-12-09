@@ -19,7 +19,7 @@ exports.deploy = async function() {
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestLedger = await ethers.getContractFactory('NestLedger');
     const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
-    const NestBatchMining = await ethers.getContractFactory('NestBatchMining');
+    const NestBatchMining = await ethers.getContractFactory('NestBatchPlatform');
     const NestVote = await ethers.getContractFactory('NestVote');
 
     console.log('** 开始部署合约 deploy.proxy.js **');
@@ -140,7 +140,7 @@ exports.deploy = async function() {
         maxBiteNestedLevel: 4,
         
         // Price effective block interval. 20
-        priceEffectSpan: 50,
+        priceEffectSpan: 20,
 
         // The amount of nest to pledge for each post (Unit: 1000). 100
         pledgeNest: 100

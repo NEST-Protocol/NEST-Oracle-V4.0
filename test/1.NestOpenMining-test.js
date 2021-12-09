@@ -11,7 +11,7 @@ describe('NestOpenMining', function() {
             nest, usdt, hbtc,
 
             nestGovernance, nestLedger,
-            nestMining, nestOpenMining,
+            nestMining, nestBatchMining,
             nestPriceFacade, nestVote,
             nTokenController, nestRedeeming
         } = await deploy();
@@ -54,22 +54,22 @@ describe('NestOpenMining', function() {
         await nest.transfer(addr1.address, 1000000000000000000000000000n);
         console.log(await getStatus());
 
-        await nest.approve(nestOpenMining.address, 10000000000000000000000000000n);
-        await usdt.approve(nestOpenMining.address, 10000000000000000000000000n);
-        await hbtc.approve(nestOpenMining.address, 10000000000000000000000000n);
-        await nest.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000000n);
-        await usdt.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000n);
-        await hbtc.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000n);
+        await nest.approve(nestBatchMining.address, 10000000000000000000000000000n);
+        await usdt.approve(nestBatchMining.address, 10000000000000000000000000n);
+        await hbtc.approve(nestBatchMining.address, 10000000000000000000000000n);
+        await nest.connect(addr1).approve(nestBatchMining.address, 10000000000000000000000000000n);
+        await usdt.connect(addr1).approve(nestBatchMining.address, 10000000000000000000000000n);
+        await hbtc.connect(addr1).approve(nestBatchMining.address, 10000000000000000000000000n);
 
-        //await nestOpenMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
-        await nestOpenMining.open({
+        //await nestBatchMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
+        await nestBatchMining.open({
             // 计价代币地址, 0表示eth
             token0: hbtc.address,
             // 计价代币单位
             unit: 1000000000000000000n,
     
             // 报价代币地址，0表示eth
-            token1: usdt.address,
+            //token1: usdt.address,
             // 每个区块的标准出矿量
             rewardPerBlock: 1000000000000000000n,
     
@@ -88,9 +88,11 @@ describe('NestOpenMining', function() {
             // Single query fee (0.0001 ether, DIMI_ETHER). 100
             singleFee: 100,
             // 衰减系数，万分制。8000
-            reductionRate: 8000
+            reductionRate: 8000,
+
+            tokens: [usdt.address]
         });
-        await nestOpenMining.increase(0, 5000000000000000000000000000n);
+        await nestBatchMining.increase(0, 5000000000000000000000000000n);
         console.log(await getStatus());
 
         if (false) {
@@ -108,10 +110,10 @@ describe('NestOpenMining', function() {
 
         if (false) {
             console.log('2. getConfig');
-            let cfg = await nestOpenMining.getConfig();
+            let cfg = await nestBatchMining.getConfig();
             console.log(UI(cfg));
 
-            await nestOpenMining.setConfig({
+            await nestBatchMining.setConfig({
                 postEthUnit: 10,
                 postFeeUnit: 2000,
                 minerNestReward: 3000,
@@ -123,7 +125,7 @@ describe('NestOpenMining', function() {
                 pledgeNest: 900
             });
 
-            cfg = await nestOpenMining.getConfig();
+            cfg = await nestBatchMining.getConfig();
             console.log(UI(cfg));
         }
 
@@ -131,7 +133,7 @@ describe('NestOpenMining', function() {
         const POSTFEE = 0.1;
         if (true) {
             console.log('3. post');
-            let receipt = await nestOpenMining.post(0, 1, 60000000000n, {
+            let receipt = await nestBatchMining.post(0, 1, [60000000000n], {
                 value: toBigInt(POSTFEE) + 1000000000n * GASLIMIT
             });
             await showReceipt(receipt);
@@ -140,30 +142,30 @@ describe('NestOpenMining', function() {
 
         if (true) {
             console.log('4. changeGovernance');
-            let ci = await nestOpenMining.getChannelInfo(0);
+            let ci = await nestBatchMining.getChannelInfo(0);
             console.log(UI(ci));
             console.log('owner: ' + owner.address);
             expect(ci.governance).to.eq(owner.address);
 
-            await nestOpenMining.changeGovernance(0, addr1.address);
-            ci = await nestOpenMining.getChannelInfo(0);
+            await nestBatchMining.changeGovernance(0, addr1.address);
+            ci = await nestBatchMining.getChannelInfo(0);
             console.log(UI(ci));
             console.log('addr1: ' + addr1.address);
             expect(ci.governance).to.eq(addr1.address);
 
-            await nestOpenMining.connect(addr1).changeGovernance(0, owner.address);
-            ci = await nestOpenMining.getChannelInfo(0);
+            await nestBatchMining.connect(addr1).changeGovernance(0, owner.address);
+            ci = await nestBatchMining.getChannelInfo(0);
             console.log(UI(ci));
             expect(ci.governance).to.eq(owner.address);
 
             if (true) {
                 console.log('5. pay');
                 
-                let rewards = await nestOpenMining.totalETHRewards(0);
+                let rewards = await nestBatchMining.totalETHRewards(0);
                 console.log('rewards: ' + toDecimal(rewards));
-                await nestOpenMining.pay(0, addr1.address, toBigInt(0.1));
+                await nestBatchMining.pay(0, addr1.address, toBigInt(0.1));
                 console.log(await getStatus());
-                rewards = await nestOpenMining.totalETHRewards(0);
+                rewards = await nestBatchMining.totalETHRewards(0);
                 console.log('rewards: ' + toDecimal(rewards));
             }
         }

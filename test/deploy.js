@@ -49,8 +49,8 @@ describe('NestOpenMining', function() {
         //     reductionRate: 8000
         // });
 
-        await nest.approve(nestOpenMining.address, toBigInt(20000000));
-        await nestOpenMining.increase(1, toBigInt(20000000));
+        //await nest.approve(nestOpenMining.address, toBigInt(20000000));
+        //await nestOpenMining.increase(1, toBigInt(20000000));
         //console.log(await nest.balanceOf(owner.address) + 'nest');
     });
 });
