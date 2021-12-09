@@ -497,7 +497,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
         // 2. Load price sheet
         PriceChannel storage channel = _channels[channelId];
-        PricePair storage pair = channel.pairs[uint(pairIndex < 0 ? pairIndex + 0xFFFF : pairIndex)];
+        PricePair storage pair = channel.pairs[uint(pairIndex < 0 ? pairIndex + 0x10000 : pairIndex)];
         PriceSheet[] storage sheets = pair.sheets;
         PriceSheet memory sheet = sheets[index];
 
