@@ -5,15 +5,15 @@ pragma solidity ^0.8.6;
 import "./lib/TransferHelper.sol";
 
 import "./interface/INestBatchPriceView.sol";
-import "./interface/INestBatchPrice.sol";
+import "./interface/INestBatchPrice2.sol";
 
 import "./NestBatchMining.sol";
 
 // 支持pairIndex数组，可以一次性查询多个价格
 /// @dev This contract implemented the mining logic of nest
-contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
+contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchPrice2 {
 
-    // TODO: 支持pairIndex数组，可以一次性查询多个价格
+    /* ========== INestBatchPriceView ========== */
 
     /// @dev Get the latest trigger price
     /// @param channelId 报价通道编号
@@ -74,29 +74,6 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         return _lastPriceList(_channels[channelId].pairs[pairIndex], count);
     } 
 
-    // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
-    // /// @param channelId 报价通道编号
-    // /// @param pairIndex 报价对编号
-    // /// @return latestPriceBlockNumber The block number of latest price
-    // /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
-    // /// @return triggeredPriceBlockNumber The block number of triggered price
-    // /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    // /// @return triggeredAvgPrice Average price
-    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    // function latestPriceAndTriggeredPriceInfo(uint channelId, uint pairIndex) external view noContract
-    // returns (
-    //     uint latestPriceBlockNumber,
-    //     uint latestPriceValue,
-    //     uint triggeredPriceBlockNumber,
-    //     uint triggeredPriceValue,
-    //     uint triggeredAvgPrice,
-    //     uint triggeredSigmaSQ
-    // ) {
-    //     return _latestPriceAndTriggeredPriceInfo(_channels[channelId].pairs[pairIndex]);
-    // }
-
     /// @dev Returns lastPriceList and triggered price info
     /// @param channelId 报价通道编号
     /// @param pairIndex 报价对编号
@@ -127,20 +104,7 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         ) = _triggeredPriceInfo(pair);
     }
 
-    // Payment of transfer fee
-    function _pay(uint channelId, address payback) private returns (PriceChannel storage channel) {
-
-        channel = _channels[channelId];
-        uint fee = uint(channel.singleFee) * DIMI_ETHER;
-        if (msg.value > fee) {
-            //payable(payback).transfer(msg.value - fee);
-            TransferHelper.safeTransferETH(payback, msg.value - fee);
-        } else {
-            require(msg.value == fee, "NOP:!fee");
-        }
-
-        channel.rewards += fee;
-    }
+    /* ========== INestBatchPrice ========== */
 
     /// @dev Get the latest trigger price
     /// @param channelId 报价通道编号
@@ -151,14 +115,14 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         uint channelId,
         uint[] calldata pairIndices, 
         address payback
-    ) external payable returns (uint[] memory prices) {
-        PriceChannel storage channel = _pay(channelId, payback);
+    ) external payable override returns (uint[] memory prices) {
+        PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
 
         uint n = pairIndices.length << 1;
         prices = new uint[](n);
         while (n > 0) {
             n -= 2;
-            (prices[n], prices[n + 1]) = _triggeredPrice(channel.pairs[pairIndices[n >> 1]]);
+            (prices[n], prices[n + 1]) = _triggeredPrice(pairs[pairIndices[n >> 1]]);
         }
     }
 
@@ -171,16 +135,14 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         uint channelId, 
         uint[] calldata pairIndices,
         address payback
-    ) external payable returns (
-        uint[] memory prices
-    ) {
-        PriceChannel storage channel = _pay(channelId, payback);
+    ) external payable override returns (uint[] memory prices) {
+        PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
 
         uint n = pairIndices.length << 2;
         prices = new uint[](n);
         while (n > 0) {
             n -= 4;
-            (prices[n], prices[n + 1], prices[n + 2], prices[n + 3]) = _triggeredPriceInfo(channel.pairs[pairIndices[n >> 2]]);
+            (prices[n], prices[n + 1], prices[n + 2], prices[n + 3]) = _triggeredPriceInfo(pairs[pairIndices[n >> 2]]);
         }
     }
 
@@ -195,14 +157,14 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         uint[] calldata pairIndices, 
         uint height, 
         address payback
-    ) external payable returns (uint[] memory prices) {
-        PriceChannel storage channel = _pay(channelId, payback);
+    ) external payable override returns (uint[] memory prices) {
+        PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
 
         uint n = pairIndices.length << 1;
         prices = new uint[](n);
         while (n > 0) {
             n -= 2;
-            (prices[n], prices[n + 1]) = _findPrice(channel.pairs[pairIndices[n >> 1]], height);
+            (prices[n], prices[n + 1]) = _findPrice(pairs[pairIndices[n >> 1]], height);
         }
     }
 
@@ -215,14 +177,14 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         uint channelId, 
         uint[] calldata pairIndices, 
         address payback
-    ) external payable returns (uint[] memory prices) {
-        PriceChannel storage channel = _pay(channelId, payback);
+    ) external payable override returns (uint[] memory prices) {
+        PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
 
         uint n = pairIndices.length << 1;
         prices = new uint[](n);
         while (n > 0) {
             n -= 2;
-            (prices[n], prices[n + 1]) = _latestPrice(channel.pairs[pairIndices[n >> 1]]);
+            (prices[n], prices[n + 1]) = _latestPrice(pairs[pairIndices[n >> 1]]);
         }
     }
 
@@ -237,46 +199,20 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         uint[] calldata pairIndices, 
         uint count, 
         address payback
-    ) external payable returns (uint[] memory prices) {
-        PriceChannel storage channel = _pay(channelId, payback);
+    ) external payable override returns (uint[] memory prices) {
+        PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
 
         uint row = count << 1;
         uint n = pairIndices.length * row;
         prices = new uint[](n);
         while (n > 0) {
             n -= row;
-            uint[] memory pi = _lastPriceList(channel.pairs[pairIndices[n / row]], count);
+            uint[] memory pi = _lastPriceList(pairs[pairIndices[n / row]], count);
             for (uint i = 0; i < row; ++i) {
                 prices[n + i] = pi[i];
             }
         }
     }
-
-    // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
-    // /// @param channelId 报价通道编号
-    // /// @param pairIndex 报价对编号
-    // /// @param payback 如果费用有多余的，则退回到此地址
-    // /// @return latestPriceBlockNumber The block number of latest price
-    // /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
-    // /// @return triggeredPriceBlockNumber The block number of triggered price
-    // /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    // /// @return triggeredAvgPrice Average price
-    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    // function latestPriceAndTriggeredPriceInfo(uint channelId, uint pairIndex, address payback) external payable
-    // returns (
-    //     uint latestPriceBlockNumber,
-    //     uint latestPriceValue,
-    //     uint triggeredPriceBlockNumber,
-    //     uint triggeredPriceValue,
-    //     uint triggeredAvgPrice,
-    //     uint triggeredSigmaSQ
-    // ) {
-    //     PriceChannel storage channel = _channels[channelId];
-    //     _pay(channel, uint(channel.singleFee), payback);
-    //     return _latestPriceAndTriggeredPriceInfo(channel.pairs[pairIndex]);
-    // }
 
     /// @dev Returns lastPriceList and triggered price info
     /// @param channelId 报价通道编号
@@ -290,8 +226,8 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         uint[] calldata pairIndices,
         uint count, 
         address payback
-    ) external payable returns (uint[] memory prices) {
-        PriceChannel storage channel = _pay(channelId, payback);
+    ) external payable override returns (uint[] memory prices) {
+        PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
 
         uint row = (count << 1) + 4;
         uint n = pairIndices.length * row;
@@ -299,7 +235,7 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
         while (n > 0) {
             n -= row;
 
-            PricePair storage pair = channel.pairs[pairIndices[n / row]];
+            PricePair storage pair = pairs[pairIndices[n / row]];
             uint[] memory pi = _lastPriceList(pair, count);
             for (uint i = 0; i + 4 < row; ++i) {
                 prices[n + i] = pi[i];
@@ -312,5 +248,21 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView {
                 prices[j + 3]
             ) = _triggeredPriceInfo(pair);
         }
+    }
+
+    // Payment of transfer fee
+    function _pay(uint channelId, address payback) private returns (PriceChannel storage channel) {
+
+        channel = _channels[channelId];
+        uint fee = uint(channel.singleFee) * DIMI_ETHER;
+        if (msg.value > fee) {
+            payable(payback).transfer(msg.value - fee);
+            // TODO: BSC上采用的是老的gas计算策略，直接转账可能导致代理合约gas超出，要改用下面的方式转账
+            //TransferHelper.safeTransferETH(payback, msg.value - fee);
+        } else {
+            require(msg.value == fee, "NOP:!fee");
+        }
+
+        channel.rewards += fee;
     }
 }

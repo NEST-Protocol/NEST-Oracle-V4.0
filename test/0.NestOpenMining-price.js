@@ -188,7 +188,7 @@ describe('NestOpenMining', function() {
             await showStatus();
             console.log('fee: ' + toDecimal((await nestBatchMining.getChannelInfo(0)).rewards));
 
-            const np = await ethers.getContractAt('INestBatchPrice', nestBatchMining.address);
+            const np = await ethers.getContractAt('INestBatchPrice2', nestBatchMining.address);
             const nv = await ethers.getContractAt('INestBatchPriceView', nestBatchMining.address);
             const test = async function() {
                 const FEE = 0.010;
@@ -199,12 +199,12 @@ describe('NestOpenMining', function() {
                     price: pi.price.toString()
                 });
 
-                await np.latestPrice(0, 0, owner.address, { value: toBigInt(FEE) });
-                await np.triggeredPrice(0, 0, owner.address, { value: toBigInt(FEE) });
+                await np.latestPrice(0, [0], owner.address, { value: toBigInt(FEE) });
+                await np.triggeredPrice(0, [0], owner.address, { value: toBigInt(FEE) });
                 //await np.latestPriceAndTriggeredPriceInfo(0, 0, owner.address, { value: toBigInt(FEE) });
-                await np.lastPriceListAndTriggeredPriceInfo(0, 0, 2, owner.address, { value: toBigInt(FEE) });
-                await np.lastPriceList(0, 0, 2, owner.address, { value: toBigInt(FEE) });
-                await np.findPrice(0, 0, 85, owner.address, { value: toBigInt(FEE) });
+                await np.lastPriceListAndTriggeredPriceInfo(0, [0], 2, owner.address, { value: toBigInt(FEE) });
+                await np.lastPriceList(0, [0], 2, owner.address, { value: toBigInt(FEE) });
+                await np.findPrice(0, [0], 85, owner.address, { value: toBigInt(FEE) });
             }
 
             console.log('没有等待');

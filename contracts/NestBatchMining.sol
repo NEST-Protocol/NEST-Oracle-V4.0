@@ -389,97 +389,6 @@ contract NestBatchMining is NestBase, INestBatchMining {
         }
     }
 
-    // /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
-    // /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
-    // /// @param channelId 报价通道编号
-    // /// @param pairIndex 报价对编号
-    // /// @param index The position of the sheet in priceSheetList[token]
-    // /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
-    // /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
-    // function takeToken0(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable override {
-
-    //     Config memory config = _config;
-
-    //     // 1. Check arguments
-    //     require(takeNum > 0, "NM:!takeNum");
-    //     require(newEquivalent > 0, "NM:!price");
-
-    //     // 2. Load price sheet
-    //     PriceChannel storage channel = _channels[channelId];
-    //     PricePair storage pair = channel.pairs[pairIndex];
-    //     PriceSheet[] storage sheets = pair.sheets;
-    //     PriceSheet memory sheet = sheets[index];
-
-    //     // 3. Check state
-    //     require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
-    //     require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
-
-    //     uint accountIndex = _addressIndex(msg.sender);
-    //     // Number of nest to be pledged
-    //     //uint needNest1k = ((takeNum << 1) / uint(config.postEthUnit)) * uint(config.pledgeNest);
-    //     // sheet.ethNumBal + sheet.tokenNumBal is always two times to sheet.ethNum
-    //     uint needNest1k = (takeNum << 2) * uint(sheet.nestNum1k) / (uint(sheet.ethNumBal) + uint(sheet.tokenNumBal));
-
-    //     // 4. Deposit fee
-    //     // 5. Calculate the number of eth, token and nest needed, and freeze them
-    //     uint needEthNum;
-    //     {
-    //         uint level = uint(sheet.level);
-
-    //         // When the level of the sheet is less than 4, both the nest and the scale of the offer are doubled
-    //         if (level < uint(config.maxBiteNestedLevel)) {
-    //             // Double scale sheet
-    //             needEthNum = takeNum << 1;
-    //             ++level;
-    //         } 
-    //         // When the level of the sheet reaches 4 or more, nest doubles, but the scale does not
-    //         else {
-    //             // Single scale sheet
-    //             needEthNum = takeNum;
-    //             // It is possible that the length of a single chain exceeds 255. When the length of a chain reaches 4
-    //             // or more, there is no logical dependence on the specific value of the contract, and the count will
-    //             // not increase after it is accumulated to 255
-    //             if (level < 255) ++level;
-    //         }
-
-    //         // 7. Calculate the price
-    //         // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
-    //         // is placed before the sheet is added, which can reduce unnecessary traversal
-    //         _stat(config, pair, sheets);
-
-    //         // 8. Create price sheet
-    //         //emit Post(channelId, msg.sender, sheets.length, needEthNum, newEquivalent);
-    //         _createPriceSheet(sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
-    //     }
-
-    //     // Freeze nest and token
-    //     {
-    //         // 冻结资产：token0, token1, nest
-    //         mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
-    //         uint fee = msg.value;
-
-    //         // 冻结nest
-    //         fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
-    //         // 冻结token0
-    //         fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
-    //         // 冻结token1
-    //         fee = _freeze(
-    //             balances, 
-    //             pair.target, 
-    //             needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
-    //             fee
-    //         );
-            
-    //         require(fee == 0, "NOM:!fee");
-    //     }
-
-    //     // 6. Update the bitten sheet
-    //     sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
-    //     sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
-    //     sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
-    //     sheets[index] = sheet;
-    // }
-
     /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
     /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
     /// @param channelId 报价通道编号
@@ -502,8 +411,10 @@ contract NestBatchMining is NestBase, INestBatchMining {
         PriceSheet memory sheet = sheets[index];
 
         // 3. Check state
-        require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
+        //require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
         require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
+        // 6. Update the bitten sheet
+        sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
 
         uint accountIndex = _addressIndex(msg.sender);
         // Number of nest to be pledged
@@ -513,24 +424,15 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
         // 4. Deposit fee
         // 5. Calculate the number of eth, token and nest needed, and freeze them
-        uint needEthNum;
+        uint needEthNum = takeNum;
         {
             uint level = uint(sheet.level);
-
-            // When the level of the sheet is less than 4, both the nest and the scale of the offer are doubled
-            if (level < uint(config.maxBiteNestedLevel)) {
-                // Double scale sheet
-                needEthNum = takeNum << 1;
+            if (level < 255) {
+                if (level < uint(config.maxBiteNestedLevel)) {
+                    // Double scale sheet
+                    needEthNum <<= 1;
+                }
                 ++level;
-            } 
-            // When the level of the sheet reaches 4 or more, nest doubles, but the scale does not
-            else {
-                // Single scale sheet
-                needEthNum = takeNum;
-                // It is possible that the length of a single chain exceeds 255. When the length of a chain reaches 4
-                // or more, there is no logical dependence on the specific value of the contract, and the count will
-                // not increase after it is accumulated to 255
-                if (level < 255) ++level;
             }
 
             // 7. Calculate the price
@@ -550,11 +452,13 @@ contract NestBatchMining is NestBase, INestBatchMining {
             mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
             uint fee = msg.value;
 
-            // 冻结nest
-            fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
             // 当吃单方向为拿走计价代币时，直接传报价对编号，当吃单方向为拿走报价代币时，传报价对编号减65536
             // pairIndex < 0，吃单方向为拿走报价代币
             if (pairIndex < 0) {
+                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
+                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
+                sheets[index] = sheet;
+
                 // 冻结token0
                 fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
                 // 冻结token1
@@ -564,12 +468,13 @@ contract NestBatchMining is NestBase, INestBatchMining {
                 } else {
                     _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, msg.sender);
                 }
-
-                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
-                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
             } 
             // pairIndex >= 0，吃单方向为拿走计价代币
             else {
+                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
+                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
+                sheets[index] = sheet;
+
                 // 冻结token0
                 fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
                 // 冻结token1
@@ -579,109 +484,14 @@ contract NestBatchMining is NestBase, INestBatchMining {
                     needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
                     fee
                 );
-                
-                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
-                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
             }
             
+            // 冻结nest
+            fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
+
             require(fee == 0, "NOM:!fee");
         }
-
-        // 6. Update the bitten sheet
-        sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
-        sheets[index] = sheet;
     }
-
-    // /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
-    // /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
-    // /// @param channelId The address of token(ntoken)
-    // /// @param pairIndex 报价对编号
-    // /// @param index The position of the sheet in priceSheetList[token]
-    // /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
-    // /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
-    // function takeToken1(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable override {
-
-    //     Config memory config = _config;
-
-    //     // 1. Check arguments
-    //     require(takeNum > 0, "NM:!takeNum");
-    //     require(newEquivalent > 0, "NM:!price");
-
-    //     // 2. Load price sheet
-    //     PriceChannel storage channel = _channels[channelId];
-    //     PricePair storage pair = channel.pairs[pairIndex];
-    //     PriceSheet[] storage sheets = pair.sheets;
-    //     PriceSheet memory sheet = sheets[index];
-
-    //     // 3. Check state
-    //     require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
-    //     require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
-
-    //     uint accountIndex = _addressIndex(msg.sender);
-    //     // Number of nest to be pledged
-    //     //uint needNest1k = ((takeNum << 1) / uint(config.postEthUnit)) * uint(config.pledgeNest);
-    //     // sheet.ethNumBal + sheet.tokenNumBal is always two times to sheet.ethNum
-    //     uint needNest1k = (takeNum << 2) * uint(sheet.nestNum1k) / (uint(sheet.ethNumBal) + uint(sheet.tokenNumBal));
-
-    //     // 4. Deposit fee
-    //     // 5. Calculate the number of eth, token and nest needed, and freeze them
-    //     uint needEthNum;
-    //     {
-    //         uint level = uint(sheet.level);
-
-    //         // When the level of the sheet is less than 4, both the nest and the scale of the offer are doubled
-    //         if (level < uint(config.maxBiteNestedLevel)) {
-    //             // Double scale sheet
-    //             needEthNum = takeNum << 1;
-    //             ++level;
-    //         } 
-    //         // When the level of the sheet reaches 4 or more, nest doubles, but the scale does not
-    //         else {
-    //             // Single scale sheet
-    //             needEthNum = takeNum;
-    //             // It is possible that the length of a single chain exceeds 255. When the length of a chain reaches 4
-    //             // or more, there is no logical dependence on the specific value of the contract, and the count will
-    //             // not increase after it is accumulated to 255
-    //             if (level < 255) ++level;
-    //         }
-
-    //         // 7. Calculate the price
-    //         // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
-    //         // is placed before the sheet is added, which can reduce unnecessary traversal
-    //         _stat(config, pair, sheets);
-
-    //         // 8. Create price sheet
-    //         //emit Post(channelId, msg.sender, sheets.length, needEthNum, newEquivalent);
-    //         _createPriceSheet(sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
-    //     }
-
-    //     // Freeze nest and token
-    //     {
-    //         // 冻结资产：token0, token1, nest
-    //         mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
-    //         uint fee = msg.value;
-
-    //         // 冻结nest
-    //         fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
-    //         // 冻结token0
-    //         fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
-    //         // 冻结token1
-    //         uint backTokenValue = _decodeFloat(sheet.priceFloat) * takeNum;
-    //         if (needEthNum * newEquivalent > backTokenValue) {
-    //             fee = _freeze(balances, pair.target, needEthNum * newEquivalent - backTokenValue, fee);
-    //         } else {
-    //             _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, msg.sender);
-    //         }
-            
-    //         require(fee == 0, "NOM:!fee");
-    //     }
-
-    //     // 6. Update the bitten sheet
-    //     sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
-    //     sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
-    //     sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
-    //     sheets[index] = sheet;
-    // }
 
     /// @dev List sheets by page
     /// @param channelId 报价通道编号

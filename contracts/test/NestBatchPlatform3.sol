@@ -2,18 +2,16 @@
 
 pragma solidity ^0.8.6;
 
-import "./lib/TransferHelper.sol";
+import "../lib/TransferHelper.sol";
 
-import "./interface/INestBatchPriceView.sol";
-import "./interface/INestBatchPrice.sol";
+import "../interface/INestBatchPriceView.sol";
+import "../interface/INestBatchPrice.sol";
 
-import "./NestBatchMining.sol";
+import "../NestBatchMining.sol";
 
 // 支持pairIndex数组，可以一次性查询多个价格
 /// @dev This contract implemented the mining logic of nest
 contract NestBatchPlatform3 is NestBatchMining {
-
-    // TODO: 支持pairIndex数组，可以一次性查询多个价格
 
     // /// @dev Get the latest trigger price
     // /// @param channelId 报价通道编号
@@ -128,7 +126,7 @@ contract NestBatchPlatform3 is NestBatchMining {
     // }
 
     // Payment of transfer fee
-    function _pay(uint channelId, address payback) private view returns (PriceChannel storage channel) {
+    function _pay(uint channelId, address) private view returns (PriceChannel storage channel) {
 
         channel = _channels[channelId];
         // uint fee = uint(channel.singleFee) * DIMI_ETHER;
