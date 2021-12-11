@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.6;
 
-import "../interface/IProxyAdmin.sol";
-import "../interface/IVotePropose.sol";
-import "../interface/INestVote.sol";
+import "../interfaces/IProxyAdmin.sol";
+import "../interfaces/IVotePropose.sol";
+import "../interfaces/INestVote.sol";
 
 contract UpdateProxyPropose is IVotePropose {
 

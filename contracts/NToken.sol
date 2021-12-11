@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.6;
 
-import "./interface/INToken.sol";
-import "./interface/INestGovernance.sol";
+import "./interfaces/INToken.sol";
+import "./interfaces/INestGovernance.sol";
 import "./NestBase.sol";
 
 // The contract is based on Nest_NToken from Nest Protocol v3.0. Considering compatibility, the interface

@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.6;
 
-import "./lib/TransferHelper.sol";
+import "./libs/TransferHelper.sol";
 
-import "./interface/INestBatchPriceView.sol";
-import "./interface/INestBatchPrice2.sol";
+import "./interfaces/INestBatchPriceView.sol";
+import "./interfaces/INestBatchPrice2.sol";
 
 import "./NestBatchMining.sol";
 

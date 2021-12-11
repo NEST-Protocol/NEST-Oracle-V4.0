@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.6;
 
-import "./lib/IERC20.sol";
-import "./lib/TransferHelper.sol";
+import "./libs/IERC20.sol";
+import "./libs/TransferHelper.sol";
 
-import "./interface/INestBatchMining.sol";
-import "./interface/INestLedger.sol";
-import "./interface/INToken.sol";
+import "./interfaces/INestBatchMining.sol";
+import "./interfaces/INestLedger.sol";
+import "./interfaces/INToken.sol";
 
 import "./NestBase.sol";
 

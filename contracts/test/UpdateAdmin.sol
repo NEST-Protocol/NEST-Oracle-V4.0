@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.6;
 
-import "../interface/IVotePropose.sol";
-import "../interface/INestMapping.sol";
-import "../interface/INestGovernance.sol";
+import "../interfaces/IVotePropose.sol";
+import "../interfaces/INestMapping.sol";
+import "../interfaces/INestGovernance.sol";
 
 // Add and remove administrators by voting
 contract UpdateAdmin is IVotePropose {

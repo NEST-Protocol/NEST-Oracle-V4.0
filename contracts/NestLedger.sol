@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.6;
 
-import "./lib/TransferHelper.sol";
-import "./interface/INestLedger.sol";
+import "./libs/TransferHelper.sol";
+import "./interfaces/INestLedger.sol";
 import "./NestBase.sol";
 
 /// @dev Nest ledger contract

@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-import "./interface/INestGovernance.sol";
+import "./interfaces/INestGovernance.sol";
 import "./NestMapping.sol";
 
 /// @dev Nest governance contract
