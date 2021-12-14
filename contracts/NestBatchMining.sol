@@ -204,7 +204,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
         // 遍历创建报价对
         for (uint i = 0; i < config.tokens.length; ++i) {
-            require(token0 != config.tokens[i], "NOM:token can't equal token1");
+            require(token0 != config.tokens[i], "NOM:token can't equal token0");
             for (uint j = 0; j < i; ++j) {
                 require(config.tokens[i] != config.tokens[j], "NOM:token reiterated");
             }
@@ -218,7 +218,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     function addPair(uint channelId, address target) external {
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:not governance");
-        require(channel.token0 != target, "NOM:token can't equal token1");
+        require(channel.token0 != target, "NOM:token can't equal token0");
         uint count = uint(channel.count);
         for (uint j = 0; j < count; ++j) {
             require(channel.pairs[j].target != target, "NOM:token reiterated");
