@@ -36,7 +36,7 @@ exports.deploy = async function() {
     // nestOpenMining: 0x638461F3Ae49CcC257ef49Fe76CCE5816A9234eF
     // nestBatchPlatform2: 0x12af92C6e7a1F855008c6B9dDEd7DcA19B49B51B
     // proxyAdmin: 0xfe40659D3DEbEBC3B5454Ad974401233b3D0E9bC
-    
+
     // 1. 部署依赖合约
     //const pusd = await TestERC20.deploy('PUSD', 'PUSD', 18);
     const pusd = await TestERC20.attach('0x5407cab67ad304FB8A4aC46D83b3Dd63A9dbA575');
@@ -161,18 +161,18 @@ exports.deploy = async function() {
     // console.log('11. nestOpenMining.open()');
     // await nestOpenMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
     
-    console.log('11. nestBatchPlatform2.setConfig()');
-    await nestBatchPlatform2.setConfig({
-        // -- Public configuration
-        // The number of times the sheet assets have doubled. 4
-        maxBiteNestedLevel: 4,
+    // console.log('11. nestBatchPlatform2.setConfig()');
+    // await nestBatchPlatform2.setConfig({
+    //     // -- Public configuration
+    //     // The number of times the sheet assets have doubled. 4
+    //     maxBiteNestedLevel: 4,
         
-        // Price effective block interval. 20
-        priceEffectSpan: 20,
+    //     // Price effective block interval. 20
+    //     priceEffectSpan: 20,
 
-        // The amount of nest to pledge for each post (Unit: 1000). 100
-        pledgeNest: 100
-    });
+    //     // The amount of nest to pledge for each post (Unit: 1000). 100
+    //     pledgeNest: 100
+    // });
     
     console.log('---------- OK ----------');
     

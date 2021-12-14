@@ -364,6 +364,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
         //fee = _freeze(balances, channel.token1, scale * equivalent, fee);
         while (cn > 0) {
             PricePair storage pair = channel.pairs[--cn];
+            require(equivalent[cn] > 0, "NOM:!equivalent");
             fee = _freeze(balances, pair.target, scale * equivalent[cn], fee);
 
             PriceSheet[] storage sheets = pair.sheets;
@@ -447,50 +448,48 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
         // TODO: 将创建报价单操作放到冻结资产前面，是否可能导致重入攻击，超额吃单？
         // Freeze nest and token
-        {
-            // 冻结资产：token0, token1, nest
-            mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
-            uint fee = msg.value;
+        // 冻结资产：token0, token1, nest
+        mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
+        uint fee = msg.value;
 
-            // 当吃单方向为拿走计价代币时，直接传报价对编号，当吃单方向为拿走报价代币时，传报价对编号减65536
-            // pairIndex < 0，吃单方向为拿走报价代币
-            if (pairIndex < 0) {
-                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
-                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
-                sheets[index] = sheet;
+        // 当吃单方向为拿走计价代币时，直接传报价对编号，当吃单方向为拿走报价代币时，传报价对编号减65536
+        // pairIndex < 0，吃单方向为拿走报价代币
+        if (pairIndex < 0) {
+            sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
+            sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
+            sheets[index] = sheet;
 
-                // 冻结token0
-                fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
-                // 冻结token1
-                uint backTokenValue = _decodeFloat(sheet.priceFloat) * takeNum;
-                if (needEthNum * newEquivalent > backTokenValue) {
-                    fee = _freeze(balances, pair.target, needEthNum * newEquivalent - backTokenValue, fee);
-                } else {
-                    _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, msg.sender);
-                }
-            } 
-            // pairIndex >= 0，吃单方向为拿走计价代币
-            else {
-                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
-                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
-                sheets[index] = sheet;
-
-                // 冻结token0
-                fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
-                // 冻结token1
-                fee = _freeze(
-                    balances, 
-                    pair.target, 
-                    needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
-                    fee
-                );
+            // 冻结token0
+            fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
+            // 冻结token1
+            uint backTokenValue = _decodeFloat(sheet.priceFloat) * takeNum;
+            if (needEthNum * newEquivalent > backTokenValue) {
+                fee = _freeze(balances, pair.target, needEthNum * newEquivalent - backTokenValue, fee);
+            } else {
+                _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, msg.sender);
             }
-            
-            // 冻结nest
-            fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
+        } 
+        // pairIndex >= 0，吃单方向为拿走计价代币
+        else {
+            sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
+            sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
+            sheets[index] = sheet;
 
-            require(fee == 0, "NOM:!fee");
+            // 冻结token0
+            fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
+            // 冻结token1
+            fee = _freeze(
+                balances, 
+                pair.target, 
+                needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
+                fee
+            );
         }
+            
+        // 冻结nest
+        fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
+
+        require(fee == 0, "NOM:!fee");
     }
 
     /// @dev List sheets by page

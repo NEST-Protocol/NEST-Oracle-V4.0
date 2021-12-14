@@ -305,6 +305,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
         // 1. Check arguments
         require(scale == 1, "NOM:!scale");
+        require(equivalent > 0, "NOM:!equivalent");
 
         // 2. Check price channel
         // 3. Load token channel and sheets
