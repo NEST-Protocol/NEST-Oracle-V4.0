@@ -212,8 +212,8 @@ interface INestBatchMining {
     /// @dev 报价
     /// @param channelId 报价通道id
     /// @param scale 报价规模（token0，单位unit）
-    /// @param equivalent 与单位token0等价的token1数量
-    function post(uint channelId, uint scale, uint[] calldata equivalent) external payable;
+    /// @param equivalents 价格数组，索引和报价对一一对应
+    function post(uint channelId, uint scale, uint[] calldata equivalents) external payable;
 
     // /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
     // /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)

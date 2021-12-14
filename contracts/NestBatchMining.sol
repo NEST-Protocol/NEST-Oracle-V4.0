@@ -326,8 +326,8 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @dev 报价
     /// @param channelId 报价通道id
     /// @param scale 报价规模（token0，单位unit）
-    /// @param equivalent 与单位token0等价的token1数量
-    function post(uint channelId, uint scale, uint[] calldata equivalent) external payable override {
+    /// @param equivalents 价格数组，索引和报价对一一对应
+    function post(uint channelId, uint scale, uint[] calldata equivalents) external payable override {
 
         // 0. 加载配置
         Config memory config = _config;
@@ -335,13 +335,10 @@ contract NestBatchMining is NestBase, INestBatchMining {
         // 1. Check arguments
         require(scale == 1, "NOM:!scale");
 
-        // 2. Check price channel
-        // 3. Load token channel and sheets
+        // 2. Load price channel
         PriceChannel storage channel = _channels[channelId];
-        //PricePair[0xFFFF] storage pairs = channel.pairs;
-        //PriceSheet[] storage sheets = channel.sheets;
 
-        // 4. Freeze assets
+        // 3. Freeze assets
         uint accountIndex = _addressIndex(msg.sender);
         // Freeze token and nest
         // Because of the use of floating-point representation(fraction * 16 ^ exponent), it may bring some precision 
@@ -361,25 +358,25 @@ contract NestBatchMining is NestBase, INestBatchMining {
         fee = _freeze(balances, channel.token0, cn * uint(channel.unit) * scale, fee);
 
         // 冻结token1
-        //fee = _freeze(balances, channel.token1, scale * equivalent, fee);
         while (cn > 0) {
             PricePair storage pair = channel.pairs[--cn];
-            require(equivalent[cn] > 0, "NOM:!equivalent");
-            fee = _freeze(balances, pair.target, scale * equivalent[cn], fee);
+            uint equivalent = equivalents[cn];
+            require(equivalent > 0, "NOM:!equivalent");
+            fee = _freeze(balances, pair.target, scale * equivalent, fee);
 
-            PriceSheet[] storage sheets = pair.sheets;
+            //PriceSheet[] storage sheets = pair.sheets;
             // Calculate the price
             // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
             // is placed before the sheet is added, which can reduce unnecessary traversal
-            _stat(config, pair, sheets);
+            _stat(config, pair, pair.sheets);
             
             // 6. Create token price sheet
             // TODO: 对事件参数进行优化
-            emit Post(channelId, cn, msg.sender, sheets.length, scale, equivalent[cn]);
-            _createPriceSheet(sheets, accountIndex, uint32(scale), uint(config.pledgeNest), cn == 0 ? 1 : 0, equivalent[cn]);
+            emit Post(channelId, cn, msg.sender, pair.sheets.length, scale, equivalent);
+            _createPriceSheet(pair.sheets, accountIndex, uint32(scale), uint(config.pledgeNest), cn == 0 ? 1 : 0, equivalent);
         }
 
-        // 5. Deposit fee
+        // 4. Deposit fee
         // 只有配置了报价佣金时才检查fee
         uint postFeeUnit = uint(channel.postFeeUnit);
         if (postFeeUnit > 0) {
@@ -446,7 +443,6 @@ contract NestBatchMining is NestBase, INestBatchMining {
             _createPriceSheet(sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
         }
 
-        // TODO: 将创建报价单操作放到冻结资产前面，是否可能导致重入攻击，超额吃单？
         // Freeze nest and token
         // 冻结资产：token0, token1, nest
         mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
