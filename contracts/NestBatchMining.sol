@@ -544,23 +544,21 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @param indices 报价单二维数组，外层对应通道号，内层对应报价单号，如果仅关闭后面的报价对，则前面的报价对数组传空数组
     function close(uint channelId, uint[][] calldata indices) external override {
         
-        //Config memory config = _config;
+        Config memory config = _config;
         PriceChannel storage channel = _channels[channelId];
         
         uint accountIndex = 0;
         uint reward = 0;
+        uint nestNum1k = 0;
+        uint ethNum = 0;
+        uint tokenValue = 0;
+
         // storage变量必须在定义时初始化，因此在此处赋值，但是由于accountIndex此时为0，此赋值没有意义
         mapping(address=>UINT) storage balances = _accounts[0/*accountIndex*/].balances;
-        uint[6] memory vars = [
+        uint[3] memory vars = [
             uint(channel.rewardPerBlock), 
             uint(channel.genesisBlock), 
-            uint(channel.reductionRate),
-            // nestNum1k
-            0, 
-            // ethNum
-            0, 
-            // tokenValue
-            0
+            uint(channel.reductionRate)
         ];
 
         for (uint j = indices.length; j > 0;) {
@@ -572,51 +570,77 @@ contract NestBatchMining is NestBase, INestBatchMining {
             // 1. Traverse sheets
             for (uint i = indices[j].length; i > 0;) {
 
-                // Because too many variables need to be returned, too many variables will be defined, 
-                // so the structure of tuple is defined
-                (uint minerIndex, Tuple memory value) = _close(_config, sheets, indices[j][--i]);
+                // ---------------------------------------------------------------------------------
+                uint index = indices[j][--i];
+                PriceSheet memory sheet = sheets[index];
+                //uint height = uint(sheet.height);
+                //uint minerIndex = uint(sheet.miner);
+                
                 // Batch closing quotation can only close sheet of the same user
                 if (accountIndex == 0) {
                     // accountIndex == 0 means the first sheet, and the number of this sheet is taken
-                    accountIndex = minerIndex;
+                    accountIndex = uint(sheet.miner);
                     balances = _accounts[accountIndex].balances;
                 } else {
                     // accountIndex != 0 means that it is a follow-up sheet, and the miner number must be 
                     // consistent with the previous record
-                    require(accountIndex == minerIndex, "NM:!miner");
+                    require(accountIndex == uint(sheet.miner), "NM:!miner");
                 }
 
-                // 后面的通道不出矿，不需要出矿逻辑
-                // 出矿按照第一个通道计算
-                if (j == 0 && uint(value.share) > 0) {
-                    // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
-                    // 这种情况是不合理的，需要由开通者负责
-                    reward += (
-                        uint(value.mined)
-                        * uint(value.share)
-                        * _reduction(uint(value.height) - vars[1], vars[2])
-                        * vars[0]
-                        / uint(value.totalShares) / 400
-                    );
+                // Check the status of the price sheet to see if it has reached the effective block interval or has been finished
+                if (accountIndex > 0 && (uint(sheet.height) + uint(config.priceEffectSpan) < block.number)) {
+
+                    // 后面的通道不出矿，不需要出矿逻辑
+                    // 出矿按照第一个通道计算
+                    if (j == 0) {
+                        // TMP: tmp is a polysemous name, here means sheet.shares
+                        uint tmp = uint(sheet.shares);
+                        // Mining logic
+                        // The price sheet which shares is zero doesn't mining
+                        if (tmp > 0) {
+
+                            // Currently, mined represents the number of blocks has mined
+                            (uint mined, uint totalShares) = _calcMinedBlocks(sheets, index, sheet);
+                            
+                            // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
+                            // 这种情况是不合理的，需要由开通者负责
+                            reward += (
+                                mined
+                                * tmp
+                                * _reduction(uint(sheet.height) - vars[1], vars[2])
+                                * vars[0]
+                                / totalShares / 400
+                            );
+                        }
+                    }
+
+                    nestNum1k += uint(sheet.nestNum1k);
+                    ethNum += uint(sheet.ethNumBal);
+                    tokenValue += _decodeFloat(sheet.priceFloat) * uint(sheet.tokenNumBal);
+
+                    // Set sheet.miner to 0, express the sheet is closed
+                    sheet.miner = uint32(0);
+                    sheet.ethNumBal = uint32(0);
+                    sheet.tokenNumBal = uint32(0);
+                    sheets[index] = sheet;
                 }
-                vars[3] += uint(value.nestNum1k);
-                vars[4] += uint(value.ethNum);
-                vars[5] += uint(value.tokenValue);
+
+                // ---------------------------------------------------------------------------------
             }
 
-            _stat(_config, pair, sheets);
+            _stat(config, pair, sheets);
             ///////////////////////////////////////////////////////////////////////////////////////
 
             // 解冻token1
-            _unfreeze(balances, pair.target, vars[5], accountIndex);
-            vars[5] = 0;
+            _unfreeze(balances, pair.target, tokenValue, accountIndex);
+            tokenValue = 0;
         }
 
         // 解冻token0
-        _unfreeze(balances, channel.token0, vars[4] * uint(channel.unit), accountIndex);
+        _unfreeze(balances, channel.token0, ethNum * uint(channel.unit), accountIndex);
         
         // 解冻nest
-        _unfreeze(balances, NEST_TOKEN_ADDRESS, vars[3] * 1000 ether, accountIndex);
+        _unfreeze(balances, NEST_TOKEN_ADDRESS, nestNum1k * 1000 ether, accountIndex);
 
         uint vault = uint(channel.vault);
         if (reward > vault) {
@@ -921,68 +945,6 @@ contract NestBatchMining is NestBase, INestBatchMining {
         if (index > uint(p0.index)) {
             p0.index = uint32(index);
             pair.price = p0;
-        }
-    }
-
-    // This structure is for the _close() method to return multiple values
-    struct Tuple {
-        uint tokenValue;
-        uint32 mined;
-        uint32 share;
-        uint32 totalShares;
-        uint32 height;
-        uint32 ethNum;
-        uint24 nestNum1k;
-    }
-
-    // Close price sheet
-    function _close(
-        Config memory config,
-        PriceSheet[] storage sheets,
-        uint index//,
-        // uint rewardPerBlock,
-        // uint genesisBlock,
-        // uint reductionRate
-    ) private returns (uint accountIndex, Tuple memory value) {
-
-        PriceSheet memory sheet = sheets[index];
-        uint height = uint(sheet.height);
-
-        // Check the status of the price sheet to see if it has reached the effective block interval or has been finished
-        if ((accountIndex = uint(sheet.miner)) > 0 && (height + uint(config.priceEffectSpan) < block.number)) {
-
-            // TMP: tmp is a polysemous name, here means sheet.shares
-            uint tmp = uint(sheet.shares);
-            // Mining logic
-            // The price sheet which shares is zero doesn't mining
-            if (tmp > 0) {
-
-                // Currently, mined represents the number of blocks has mined
-                (uint mined, uint totalShares) = _calcMinedBlocks(sheets, index, sheet);
-                // // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
-                // // 这种情况是不合理的，需要由开通者负责
-                // value.ntokenValue = uint96(
-                //     mined
-                //     * tmp
-                //     * _reduction(height - genesisBlock, reductionRate)
-                //     * rewardPerBlock
-                //     / totalShares / 400
-                // );
-                value.mined = uint32(mined);
-                value.share = uint32(tmp);
-                value.totalShares = uint32(totalShares);
-                value.height = uint32(height);
-            }
-
-            value.nestNum1k = sheet.nestNum1k; //uint96(uint(sheet.nestNum1k) * 1000 ether);
-            value.ethNum = sheet.ethNumBal;
-            value.tokenValue = _decodeFloat(sheet.priceFloat) * uint(sheet.tokenNumBal);
-
-            // Set sheet.miner to 0, express the sheet is closed
-            sheet.miner = uint32(0);
-            sheet.ethNumBal = uint32(0);
-            sheet.tokenNumBal = uint32(0);
-            sheets[index] = sheet;
         }
     }
 
