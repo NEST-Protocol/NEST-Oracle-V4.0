@@ -97,12 +97,12 @@ interface INestBatchMining {
         // 计价代币单位
         uint96 unit;
 
-        // 每个区块的标准出矿量
-        uint96 rewardPerBlock;
-
         // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
         // 出矿代币地址
         address reward;
+        // 每个区块的标准出矿量
+        uint96 rewardPerBlock;
+
         // 矿币总量
         //uint96 vault;
 
@@ -133,42 +133,35 @@ interface INestBatchMining {
         
         uint channelId;
 
-        //uint sheetCount;
-
-        // The information of mining fee
-        // Low 128-bits represent fee per post
-        // High 128-bits represent the current counter of no fee sheets (including settled)
-        uint rewards;
-
         // 计价代币地址, 0表示eth
         address token0;
         // 计价代币单位
         uint96 unit;
 
-        // // 报价代币地址，0表示eth
-        // address token1;
-        // 每个区块的标准出矿量
-        uint96 rewardPerBlock;
-
         // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
         // 出矿代币地址
         address reward;
+        // 每个区块的标准出矿量
+        uint96 rewardPerBlock;
+
         // 矿币总量
-        uint96 vault;
+        uint128 vault;
+        // The information of mining fee
+        uint96 rewards;
+        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        uint16 postFeeUnit;
+        // 报价对数量
+        uint16 count;
 
         // 管理地址
         address governance;
         // 创世区块
         uint32 genesisBlock;
-        // Post fee(0.0001eth，DIMI_ETHER). 1000
-        uint16 postFeeUnit;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         uint16 singleFee;
         // 衰减系数，万分制。8000
         uint16 reductionRate;
-        // 报价对数量
-        uint16 count;
-
+        
         // 报价对信息
         PairView[] pairs;
     }

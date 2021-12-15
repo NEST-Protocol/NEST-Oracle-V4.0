@@ -136,7 +136,7 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
             require(msg.value == fee, "NOP:!fee");
         }
 
-        channel.rewards += fee;
+        channel.rewards += _toUInt96(fee);
     }
 
     /// @dev Get the latest trigger price
