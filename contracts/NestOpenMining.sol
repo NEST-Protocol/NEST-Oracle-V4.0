@@ -924,11 +924,10 @@ contract NestOpenMining is NestBase, INestOpenMining {
         // Check the status of the price sheet to see if it has reached the effective block interval or has been finished
         if ((accountIndex = uint(sheet.miner)) > 0 && (height + uint(config.priceEffectSpan) < block.number)) {
 
-            // TMP: tmp is a polysemous name, here means sheet.shares
-            uint tmp = uint(sheet.shares);
+            uint shares = uint(sheet.shares);
             // Mining logic
             // The price sheet which shares is zero doesn't mining
-            if (tmp > 0) {
+            if (shares > 0) {
 
                 // Currently, mined represents the number of blocks has mined
                 (uint mined, uint totalShares) = _calcMinedBlocks(sheets, index, sheet);
@@ -936,7 +935,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
                 // 这种情况是不合理的，需要由开通者负责
                 value.ntokenValue = uint96(
                     mined
-                    * tmp
+                    * shares
                     * _reduction(height - genesisBlock, reductionRate)
                     * rewardPerBlock
                     / totalShares / 400
@@ -1334,7 +1333,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
             bool flag = index == 0;
             if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
+                if (totalEthNum > 0 && height + priceEffectSpan < block.number) {
                     return (height + priceEffectSpan, totalTokenValue / totalEthNum);
                 }
                 if (flag) {
@@ -1374,7 +1373,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
             bool flag = index == 0;
             if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
+                if (totalEthNum > 0 && height + priceEffectSpan < block.number) {
                     array[i++] = height + priceEffectSpan;
                     array[i++] = totalTokenValue / totalEthNum;
                 }

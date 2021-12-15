@@ -594,11 +594,10 @@ contract NestBatchMining is NestBase, INestBatchMining {
                     // 后面的通道不出矿，不需要出矿逻辑
                     // 出矿按照第一个通道计算
                     if (j == 0) {
-                        // TMP: tmp is a polysemous name, here means sheet.shares
-                        uint tmp = uint(sheet.shares);
+                        uint shares = uint(sheet.shares);
                         // Mining logic
                         // The price sheet which shares is zero doesn't mining
-                        if (tmp > 0) {
+                        if (shares > 0) {
 
                             // Currently, mined represents the number of blocks has mined
                             (uint mined, uint totalShares) = _calcMinedBlocks(sheets, index, sheet);
@@ -607,7 +606,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
                             // 这种情况是不合理的，需要由开通者负责
                             reward += (
                                 mined
-                                * tmp
+                                * shares
                                 * _reduction(uint(sheet.height) - vars[1], vars[2])
                                 * vars[0]
                                 / totalShares / 400
@@ -1288,7 +1287,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
             bool flag = index == 0;
             if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
+                if (totalEthNum > 0 && height + priceEffectSpan < block.number) {
                     return (height + priceEffectSpan, totalTokenValue / totalEthNum);
                 }
                 if (flag) {
@@ -1328,7 +1327,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
             bool flag = index == 0;
             if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
+                if (totalEthNum > 0 && height + priceEffectSpan < block.number) {
                     array[i++] = height + priceEffectSpan;
                     array[i++] = totalTokenValue / totalEthNum;
                 }
