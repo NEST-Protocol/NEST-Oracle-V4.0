@@ -53,14 +53,14 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         return _findPrice(_channels[channelId].pairs[pairIndex], height);
     }
 
-    /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    function latestPrice(uint channelId, uint pairIndex) external view override noContract returns (uint blockNumber, uint price) {
-        return _latestPrice(_channels[channelId].pairs[pairIndex]);
-    }
+    // /// @dev Get the latest effective price
+    // /// @param channelId 报价通道编号
+    // /// @param pairIndex 报价对编号
+    // /// @return blockNumber The block number of price
+    // /// @return price The token price. (1eth equivalent to (price) token)
+    // function latestPrice(uint channelId, uint pairIndex) external view override noContract returns (uint blockNumber, uint price) {
+    //     return _latestPrice(_channels[channelId].pairs[pairIndex]);
+    // }
 
     /// @dev Get the last (num) effective price
     /// @param channelId 报价通道编号
@@ -198,22 +198,22 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         return _findPrice(_pay(channelId, payback).pairs[pairIndex], height);
     }
 
-    /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    function latestPrice(
-        uint channelId, 
-        uint pairIndex,
-        address payback
-    ) external payable override returns (
-        uint blockNumber, 
-        uint price
-    ) {
-        return _latestPrice(_pay(channelId, payback).pairs[pairIndex]);
-    }
+    // /// @dev Get the latest effective price
+    // /// @param channelId 报价通道编号
+    // /// @param pairIndex 报价对编号
+    // /// @param payback 如果费用有多余的，则退回到此地址
+    // /// @return blockNumber The block number of price
+    // /// @return price The token price. (1eth equivalent to (price) token)
+    // function latestPrice(
+    //     uint channelId, 
+    //     uint pairIndex,
+    //     address payback
+    // ) external payable override returns (
+    //     uint blockNumber, 
+    //     uint price
+    // ) {
+    //     return _latestPrice(_pay(channelId, payback).pairs[pairIndex]);
+    // }
 
     /// @dev Get the last (num) effective price
     /// @param channelId 报价通道编号

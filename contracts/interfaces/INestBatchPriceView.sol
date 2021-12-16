@@ -40,12 +40,12 @@ interface INestBatchPriceView {
         uint height
     ) external view returns (uint blockNumber, uint price);
 
-    /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    function latestPrice(uint channelId, uint pairIndex) external view returns (uint blockNumber, uint price);
+    // /// @dev Get the latest effective price
+    // /// @param channelId 报价通道编号
+    // /// @param pairIndex 报价对编号
+    // /// @return blockNumber The block number of price
+    // /// @return price The token price. (1eth equivalent to (price) token)
+    // function latestPrice(uint channelId, uint pairIndex) external view returns (uint blockNumber, uint price);
 
     /// @dev Get the last (num) effective price
     /// @param channelId 报价通道编号

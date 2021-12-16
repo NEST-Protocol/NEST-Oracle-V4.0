@@ -372,12 +372,12 @@ contract NestBatchMining is NestBase, INestBatchMining {
             // Calculate the price
             // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
             // is placed before the sheet is added, which can reduce unnecessary traversal
-            _stat(config, pair, pair.sheets);
+            _stat(config, pair);
             
             // 6. Create token price sheet
             // TODO: 对事件参数进行优化
             emit Post(channelId, cn, msg.sender, pair.sheets.length, scale, equivalent);
-            _createPriceSheet(pair.sheets, accountIndex, uint32(scale), uint(config.pledgeNest), cn == 0 ? 1 : 0, equivalent);
+            _create(pair.sheets, accountIndex, uint32(scale), uint(config.pledgeNest), cn == 0 ? 1 : 0, equivalent);
         }
 
         // 4. Deposit fee
@@ -394,11 +394,11 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
     /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号。当吃单方向为拿走计价代币时，直接传报价对编号，当吃单方向为拿走报价代币时，传报价对编号减65536
+    /// @param pairIndex 报价对编号。当吃单方向为拿走计价代币时，直接传报价对编号，当吃单方向为拿走报价代币时，传报价对编号加65536
     /// @param index The position of the sheet in priceSheetList[token]
     /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
     /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
-    function take(uint channelId, int pairIndex, uint index, uint takeNum, uint newEquivalent) external payable override {
+    function take(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable override {
 
         Config memory config = _config;
 
@@ -408,9 +408,9 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
         // 2. Load price sheet
         PriceChannel storage channel = _channels[channelId];
-        PricePair storage pair = channel.pairs[uint(pairIndex < 0 ? pairIndex + 0x10000 : pairIndex)];
-        PriceSheet[] storage sheets = pair.sheets;
-        PriceSheet memory sheet = sheets[index];
+        PricePair storage pair = channel.pairs[pairIndex < 0x10000 ? pairIndex : pairIndex - 0x10000];
+        //PriceSheet[] storage sheets = pair.sheets;
+        PriceSheet memory sheet = pair.sheets[index];
 
         // 3. Check state
         //require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
@@ -440,11 +440,11 @@ contract NestBatchMining is NestBase, INestBatchMining {
             // 7. Calculate the price
             // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
             // is placed before the sheet is added, which can reduce unnecessary traversal
-            _stat(config, pair, sheets);
+            _stat(config, pair);
 
             // 8. Create price sheet
-            //emit Post(channelId, msg.sender, sheets.length, needEthNum, newEquivalent);
-            _createPriceSheet(sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
+            emit Post(channelId, pairIndex < 0x10000 ? pairIndex : pairIndex - 0x10000, msg.sender, pair.sheets.length, needEthNum, newEquivalent);
+            _create(pair.sheets, accountIndex, uint32(needEthNum), needNest1k, level << 8, newEquivalent);
         }
 
         // Freeze nest and token
@@ -453,27 +453,11 @@ contract NestBatchMining is NestBase, INestBatchMining {
         uint fee = msg.value;
 
         // 当吃单方向为拿走计价代币时，直接传报价对编号，当吃单方向为拿走报价代币时，传报价对编号减65536
-        // pairIndex < 0，吃单方向为拿走报价代币
-        if (pairIndex < 0) {
-            sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
-            sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
-            sheets[index] = sheet;
-
-            // 冻结token0
-            fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
-            // 冻结token1
-            uint backTokenValue = _decodeFloat(sheet.priceFloat) * takeNum;
-            if (needEthNum * newEquivalent > backTokenValue) {
-                fee = _freeze(balances, pair.target, needEthNum * newEquivalent - backTokenValue, fee);
-            } else {
-                _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, msg.sender);
-            }
-        } 
-        // pairIndex >= 0，吃单方向为拿走计价代币
-        else {
+        // pairIndex < 0x10000，吃单方向为拿走计价代币
+        if (pairIndex < 0x10000) {
             sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
             sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
-            sheets[index] = sheet;
+            pair.sheets[index] = sheet;
 
             // 冻结token0
             fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
@@ -484,6 +468,22 @@ contract NestBatchMining is NestBase, INestBatchMining {
                 needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
                 fee
             );
+        } 
+        // pairIndex >= 0x10000，吃单方向为拿走报价代币
+        else {
+            sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
+            sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
+            pair.sheets[index] = sheet;
+
+            // 冻结token0
+            fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
+            // 冻结token1
+            uint backTokenValue = _decodeFloat(sheet.priceFloat) * takeNum;
+            if (needEthNum * newEquivalent > backTokenValue) {
+                fee = _freeze(balances, pair.target, needEthNum * newEquivalent - backTokenValue, fee);
+            } else {
+                _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, msg.sender);
+            }
         }
             
         // 冻结nest
@@ -564,7 +564,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
             PricePair storage pair = channel.pairs[--j];
 
             ///////////////////////////////////////////////////////////////////////////////////////
-            PriceSheet[] storage sheets = pair.sheets;
+            //PriceSheet[] storage sheets = pair.sheets;
 
             uint tokenValue = 0;
 
@@ -573,7 +573,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
                 // ---------------------------------------------------------------------------------
                 uint index = indices[j][--i];
-                PriceSheet memory sheet = sheets[index];
+                PriceSheet memory sheet = pair.sheets[index];
                 //uint height = uint(sheet.height);
                 //uint minerIndex = uint(sheet.miner);
                 
@@ -600,7 +600,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
                         if (shares > 0) {
 
                             // Currently, mined represents the number of blocks has mined
-                            (uint mined, uint totalShares) = _calcMinedBlocks(sheets, index, sheet);
+                            (uint mined, uint totalShares) = _calcMinedBlocks(pair.sheets, index, sheet);
                             
                             // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
                             // 这种情况是不合理的，需要由开通者负责
@@ -622,13 +622,13 @@ contract NestBatchMining is NestBase, INestBatchMining {
                     sheet.miner = uint32(0);
                     sheet.ethNumBal = uint32(0);
                     sheet.tokenNumBal = uint32(0);
-                    sheets[index] = sheet;
+                    pair.sheets[index] = sheet;
                 }
 
                 // ---------------------------------------------------------------------------------
             }
 
-            _stat(config, pair, sheets);
+            _stat(config, pair);
             ///////////////////////////////////////////////////////////////////////////////////////
 
             // 解冻token1
@@ -802,7 +802,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     }
 
     // Create price sheet
-    function _createPriceSheet(
+    function _create(
         PriceSheet[] storage sheets,
         uint accountIndex,
         uint32 ethNum,
@@ -825,8 +825,9 @@ contract NestBatchMining is NestBase, INestBatchMining {
     }
 
     // Calculate price, average price and volatility
-    function _stat(Config memory config, PricePair storage pair, PriceSheet[] storage sheets) private {
-
+    function _stat(Config memory config, PricePair storage pair) private {
+        
+        PriceSheet[] storage sheets = pair.sheets;
         // Load token price information
         PriceInfo memory p0 = pair.price;
 
@@ -1267,44 +1268,44 @@ contract NestBatchMining is NestBase, INestBatchMining {
         return (0, 0);
     }
 
-    /// @dev Get the latest effective price
-    /// @param pair 报价对
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    function _latestPrice(PricePair storage pair) internal view returns (uint blockNumber, uint price) {
+    // /// @dev Get the latest effective price
+    // /// @param pair 报价对
+    // /// @return blockNumber The block number of price
+    // /// @return price The token price. (1eth equivalent to (price) token)
+    // function _latestPrice(PricePair storage pair) internal view returns (uint blockNumber, uint price) {
 
-        PriceSheet[] storage sheets = pair.sheets;
-        PriceSheet memory sheet;
+    //     PriceSheet[] storage sheets = pair.sheets;
+    //     PriceSheet memory sheet;
 
-        uint priceEffectSpan = uint(_config.priceEffectSpan);
-        //uint h = block.number - priceEffectSpan;
-        uint index = sheets.length;
-        uint totalEthNum = 0;
-        uint totalTokenValue = 0;
-        uint height = 0;
+    //     uint priceEffectSpan = uint(_config.priceEffectSpan);
+    //     //uint h = block.number - priceEffectSpan;
+    //     uint index = sheets.length;
+    //     uint totalEthNum = 0;
+    //     uint totalTokenValue = 0;
+    //     uint height = 0;
 
-        for (; ; ) {
+    //     for (; ; ) {
 
-            bool flag = index == 0;
-            if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height + priceEffectSpan < block.number) {
-                    return (height + priceEffectSpan, totalTokenValue / totalEthNum);
-                }
-                if (flag) {
-                    break;
-                }
-                totalEthNum = 0;
-                totalTokenValue = 0;
-                height = uint(sheet.height);
-            }
+    //         bool flag = index == 0;
+    //         if (flag || height != uint((sheet = sheets[--index]).height)) {
+    //             if (totalEthNum > 0 && height + priceEffectSpan < block.number) {
+    //                 return (height + priceEffectSpan, totalTokenValue / totalEthNum);
+    //             }
+    //             if (flag) {
+    //                 break;
+    //             }
+    //             totalEthNum = 0;
+    //             totalTokenValue = 0;
+    //             height = uint(sheet.height);
+    //         }
 
-            uint remainNum = uint(sheet.remainNum);
-            totalEthNum += remainNum;
-            totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
-        }
+    //         uint remainNum = uint(sheet.remainNum);
+    //         totalEthNum += remainNum;
+    //         totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
+    //     }
 
-        return (0, 0);
-    }
+    //     return (0, 0);
+    // }
 
     /// @dev Get the last (num) effective price
     /// @param pair 报价对

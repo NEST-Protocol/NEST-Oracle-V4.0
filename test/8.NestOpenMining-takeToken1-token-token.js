@@ -158,7 +158,7 @@ describe('NestOpenMining', function() {
                 expect(toDecimal(await nestBatchMining.balanceOf(nest.address, addr1.address))).eq(toDecimal(0));
                 return;
             }
-            await nestBatchMining.connect(addr1).take(0, 0 - 0x10000, 0, 1, toBigInt(50000, 6), {
+            await nestBatchMining.connect(addr1).take(0, 0 + 0x10000, 0, 1, toBigInt(50000, 6), {
                 value: 0
             });
             status = await showStatus();
@@ -231,7 +231,7 @@ describe('NestOpenMining', function() {
                 }
             } else {
                 console.log('2. 吃单链');
-                await nestBatchMining.take(0, 0 - 0x10000, 1, 2, toBigInt(70000, 6));
+                await nestBatchMining.take(0, 0 + 0x10000, 1, 2, toBigInt(70000, 6));
                 status = await showStatus();
 
                 expect(status.owner.usdt).to.eq(toDecimal(toBigInt(10000000 - 60000 - 70000 * 4 + 50000 * 2, 6), 6));

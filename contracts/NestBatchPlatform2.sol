@@ -56,14 +56,14 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
         return _findPrice(_channels[channelId].pairs[pairIndex], height);
     }
 
-    /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    function latestPrice(uint channelId, uint pairIndex) external view override noContract returns (uint blockNumber, uint price) {
-        return _latestPrice(_channels[channelId].pairs[pairIndex]);
-    }
+    // /// @dev Get the latest effective price
+    // /// @param channelId 报价通道编号
+    // /// @param pairIndex 报价对编号
+    // /// @return blockNumber The block number of price
+    // /// @return price The token price. (1eth equivalent to (price) token)
+    // function latestPrice(uint channelId, uint pairIndex) external view override noContract returns (uint blockNumber, uint price) {
+    //     return _latestPrice(_channels[channelId].pairs[pairIndex]);
+    // }
 
     /// @dev Get the last (num) effective price
     /// @param channelId 报价通道编号
@@ -168,25 +168,25 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
         }
     }
 
-    /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
-    /// @param pairIndices 报价对编号
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices 价格数组, i * 2 为第i个价格所在区块, i * 2 + 1 为第i个价格
-    function latestPrice(
-        uint channelId, 
-        uint[] calldata pairIndices, 
-        address payback
-    ) external payable override returns (uint[] memory prices) {
-        PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
+    // /// @dev Get the latest effective price
+    // /// @param channelId 报价通道编号
+    // /// @param pairIndices 报价对编号
+    // /// @param payback 如果费用有多余的，则退回到此地址
+    // /// @return prices 价格数组, i * 2 为第i个价格所在区块, i * 2 + 1 为第i个价格
+    // function latestPrice(
+    //     uint channelId, 
+    //     uint[] calldata pairIndices, 
+    //     address payback
+    // ) external payable override returns (uint[] memory prices) {
+    //     PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
 
-        uint n = pairIndices.length << 1;
-        prices = new uint[](n);
-        while (n > 0) {
-            n -= 2;
-            (prices[n], prices[n + 1]) = _latestPrice(pairs[pairIndices[n >> 1]]);
-        }
-    }
+    //     uint n = pairIndices.length << 1;
+    //     prices = new uint[](n);
+    //     while (n > 0) {
+    //         n -= 2;
+    //         (prices[n], prices[n + 1]) = _latestPrice(pairs[pairIndices[n >> 1]]);
+    //     }
+    // }
 
     /// @dev Get the last (num) effective price
     /// @param channelId 报价通道编号

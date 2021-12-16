@@ -17,7 +17,7 @@ contract QueryTest {
         uint[] memory idxes = new uint[](1);
         //idxes[0] = 0;
         idxes[0] = 1;
-        uint[] memory prices = INestBatchPrice2(_nestBatchPlatform2).latestPrice { value: msg.value } (0, idxes, msg.sender);
+        uint[] memory prices = INestBatchPrice2(_nestBatchPlatform2).lastPriceList { value: msg.value } (0, idxes, 1, msg.sender);
         for (uint i = 0; i < prices.length; ++i) {
             console.log("query-prices", prices[i]);
         }

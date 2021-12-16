@@ -44,13 +44,13 @@ interface INestBatchPrice {
         address payback
     ) external payable returns (uint blockNumber, uint price);
 
-    /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    function latestPrice(uint channelId, uint pairIndex, address payback) external payable returns (uint blockNumber, uint price);
+    // /// @dev Get the latest effective price
+    // /// @param channelId 报价通道编号
+    // /// @param pairIndex 报价对编号
+    // /// @param payback 如果费用有多余的，则退回到此地址
+    // /// @return blockNumber The block number of price
+    // /// @return price The token price. (1eth equivalent to (price) token)
+    // function latestPrice(uint channelId, uint pairIndex, address payback) external payable returns (uint blockNumber, uint price);
 
     /// @dev Get the last (num) effective price
     /// @param channelId 报价通道编号

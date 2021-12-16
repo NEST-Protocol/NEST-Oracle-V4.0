@@ -193,13 +193,13 @@ describe('NestOpenMining', function() {
             const test = async function() {
                 const FEE = 0.010;
 
-                let pi = await nv.latestPrice(0, 0);
+                let pi = await nv.lastPriceList(0, 0, 1);
                 console.log({
-                    blockNumber: pi.blockNumber.toString(),
-                    price: pi.price.toString()
+                    blockNumber: pi[0].toString(), //pi.blockNumber.toString(),
+                    price: pi[1].toString() //pi.price.toString()
                 });
 
-                await np.latestPrice(0, [0], owner.address, { value: toBigInt(FEE) });
+                await np.lastPriceList(0, [0], 1, owner.address, { value: toBigInt(FEE) });
                 await np.triggeredPrice(0, [0], owner.address, { value: toBigInt(FEE) });
                 //await np.latestPriceAndTriggeredPriceInfo(0, 0, owner.address, { value: toBigInt(FEE) });
                 await np.lastPriceListAndTriggeredPriceInfo(0, [0], 2, owner.address, { value: toBigInt(FEE) });
