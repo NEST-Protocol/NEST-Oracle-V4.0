@@ -52,7 +52,7 @@ describe('NestOpenMining', function() {
         //     // 创世区块
         //     //uint32 genesisBlock;
         //     // Post fee(0.0001eth，DIMI_ETHER). 1000
-        //     postFeeUnit: 1000,
+        //     postFeeUnit: 0,
         //     // Single query fee (0.0001 ether, DIMI_ETHER). 100
         //     singleFee: 10,
         //     // 衰减系数，万分制。8000
