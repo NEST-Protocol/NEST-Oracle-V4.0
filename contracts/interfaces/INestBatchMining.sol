@@ -190,12 +190,12 @@ interface INestBatchMining {
     /// @dev 向报价通道注入矿币
     /// @param channelId 报价通道
     /// @param vault 注入矿币数量
-    function increase(uint channelId, uint96 vault) external payable;
+    function increase(uint channelId, uint128 vault) external payable;
 
     /// @dev 从报价通道取出矿币
     /// @param channelId 报价通道
     /// @param vault 注入矿币数量
-    function decrease(uint channelId, uint96 vault) external;
+    function decrease(uint channelId, uint128 vault) external;
 
     /// @dev 获取报价通道信息
     /// @param channelId 报价通道

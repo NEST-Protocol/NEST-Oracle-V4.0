@@ -208,9 +208,9 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceChannel storage channel = _channels[channelId];
         address reward = channel.reward;
         if (reward == address(0)) {
-            require(msg.value == vault, "NOM:vault error");
+            require(msg.value == uint(vault), "NOM:vault error");
         } else {
-            TransferHelper.safeTransferFrom(reward, msg.sender, address(this), vault);
+            TransferHelper.safeTransferFrom(reward, msg.sender, address(this), uint(vault));
         }
         channel.vault += vault;
     }
@@ -222,12 +222,12 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:not governance");
         address reward = channel.reward;
-        if (reward == address(0)) {
-            payable(msg.sender).transfer(vault);
-        } else {
-            TransferHelper.safeTransfer(reward, msg.sender, vault);
-        }
         channel.vault -= vault;
+        if (reward == address(0)) {
+            payable(msg.sender).transfer(uint(vault));
+        } else {
+            TransferHelper.safeTransfer(reward, msg.sender, uint(vault));
+        }
     }
 
     // /// @dev 向报价通道注入NToken矿币
