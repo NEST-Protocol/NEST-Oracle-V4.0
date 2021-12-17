@@ -26,42 +26,36 @@ describe('NestOpenMining', function() {
 
         //await hbtc.transfer(owner.address, 10000000000000000000000000n);
 
-        // let receipt = await nestBatchPlatform2.post(0, 1, [60000000000n], {
-        //     value: toBigInt(POSTFEE) + 10000000000n * GASLIMIT
-        // });
+        await nestBatchPlatform2.open({
+            // 计价代币地址, 0表示eth
+            token0: pusd.address,
+            // 计价代币单位
+            unit: 2000000000000000000000n,
 
-        // await nestBatchPlatform2.open({
-        //     // 计价代币地址, 0表示eth
-        //     token0: pusd.address,
-        //     // 计价代币单位
-        //     unit: 2000000000000000000000n,
-    
-        //     // 报价代币地址，0表示eth
-        //     //token1: usdt.address,
-        //     // 每个区块的标准出矿量
-        //     rewardPerBlock: 1000000000000000000n,
-    
-        //     // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
-        //     // 出矿代币地址
-        //     reward: nest.address,
-        //     // 矿币总量
-        //     //uint96 vault;
-    
-        //     // 管理地址
-        //     //address governance;
-        //     // 创世区块
-        //     //uint32 genesisBlock;
-        //     // Post fee(0.0001eth，DIMI_ETHER). 1000
-        //     postFeeUnit: 0,
-        //     // Single query fee (0.0001 ether, DIMI_ETHER). 100
-        //     singleFee: 10,
-        //     // 衰减系数，万分制。8000
-        //     reductionRate: 8000,
+            // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
+            // 出矿代币地址
+            reward: nest.address,
+            // 每个区块的标准出矿量
+            rewardPerBlock: 4000000000000000000n,
 
-        //     tokens: [hbtc.address]
-        // });
+            // 矿币总量
+            //uint96 vault;
 
-        // await nest.approve(nestBatchPlatform2.address, 1000000000000000000000000n);
-        // await nestBatchPlatform2.increase(0, 1000000000000000000000000n);
+            // 管理地址
+            //address governance;
+            // 创世区块
+            //uint32 genesisBlock;
+            // Post fee(0.0001eth，DIMI_ETHER). 1000
+            postFeeUnit: 0,
+            // Single query fee (0.0001 ether, DIMI_ETHER). 100
+            singleFee: 10,
+            // 衰减系数，万分制。8000
+            reductionRate: 8000,
+
+            tokens: [eth.address, hbtc.address, nest.address]
+        });
+
+        await nest.approve(nestBatchPlatform2.address, 100000000000000000000000000n);
+        await nestBatchPlatform2.increase(0, 100000000000000000000000000n);
     });
 });
