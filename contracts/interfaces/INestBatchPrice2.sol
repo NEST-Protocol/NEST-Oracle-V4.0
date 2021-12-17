@@ -20,7 +20,8 @@ interface INestBatchPrice2 {
     /// @param channelId 报价通道编号
     /// @param pairIndices 报价对编号
     /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices 价格数组, i * 4 为第i个价格所在区块, i * 4 + 1 为第i个价格, i * 4 + 2 为第i个平均价格, i * 4 + 3 为第i个波动率
+    /// @return prices 价格数组, i * 4 为第i个价格所在区块, i * 4 + 1 为第i个价格, 
+    ///         i * 4 + 2 为第i个平均价格, i * 4 + 3 为第i个波动率
     function triggeredPriceInfo(
         uint channelId, 
         uint[] calldata pairIndices,
@@ -39,17 +40,6 @@ interface INestBatchPrice2 {
         uint height, 
         address payback
     ) external payable returns (uint[] memory prices);
-
-    // /// @dev Get the latest effective price
-    // /// @param channelId 报价通道编号
-    // /// @param pairIndices 报价对编号
-    // /// @param payback 如果费用有多余的，则退回到此地址
-    // /// @return prices 价格数组, i * 2 为第i个价格所在区块, i * 2 + 1 为第i个价格
-    // function latestPrice(
-    //     uint channelId, 
-    //     uint[] calldata pairIndices, 
-    //     address payback
-    // ) external payable returns (uint[] memory prices);
 
     /// @dev Get the last (num) effective price
     /// @param channelId 报价通道编号

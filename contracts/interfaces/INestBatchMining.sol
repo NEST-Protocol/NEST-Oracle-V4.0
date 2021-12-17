@@ -25,26 +25,6 @@ interface INestBatchMining {
     /// @dev Nest mining configuration structure
     struct Config {
         
-        // // Eth number of each post. 30
-        // // We can stop post and taking orders by set postEthUnit to 0 (closing and withdraw are not affected)
-        // uint32 postEthUnit;
-
-        // // Post fee(0.0001eth，DIMI_ETHER). 1000
-        // uint16 postFeeUnit;
-
-        // // Proportion of miners digging(10000 based). 8000
-        // uint16 minerNestReward;
-        
-        // // The proportion of token dug by miners is only valid for the token created in version 3.0
-        // // (10000 based). 9500
-        // uint16 minerNTokenReward;
-
-        // // When the circulation of ntoken exceeds this threshold, post() is prohibited(Unit: 10000 ether). 500
-        // uint32 doublePostThreshold;
-        
-        // // The limit of ntoken mined blocks. 100
-        // uint16 ntokenMinedBlockLimit;
-
         // -- Public configuration
         // The number of times the sheet assets have doubled. 4
         uint8 maxBiteNestedLevel;
@@ -176,13 +156,6 @@ interface INestBatchMining {
     /// @return Configuration object
     function getConfig() external view returns (Config memory);
     
-    // /// @dev 开通报价通道
-    // /// @param token0 计价代币地址。0表示eth
-    // /// @param unit token0的单位
-    // /// @param token1 报价代币地址。0表示eth
-    // /// @param reward 挖矿代币地址。0表示挖eth
-    // function open(address token0, uint unit, address token1, address reward) external;
-
     /// @dev 开通报价通道
     /// @param config 报价通道配置
     function open(ChannelConfig calldata config) external;
@@ -208,28 +181,10 @@ interface INestBatchMining {
     /// @param equivalents 价格数组，索引和报价对一一对应
     function post(uint channelId, uint scale, uint[] calldata equivalents) external payable;
 
-    // /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
-    // /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
-    // /// @param channelId 报价通道编号
-    // /// @param pairIndex 报价对编号
-    // /// @param index The position of the sheet in priceSheetList[token]
-    // /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
-    // /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
-    // function takeToken0(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable;
-
-    // /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
-    // /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
-    // /// @param channelId The address of token(ntoken)
-    // /// @param pairIndex 报价对编号
-    // /// @param index The position of the sheet in priceSheetList[token]
-    // /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
-    // /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
-    // function takeToken1(uint channelId, uint pairIndex, uint index, uint takeNum, uint newEquivalent) external payable;
-
     /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
     /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
     /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号。当吃单方向为拿走计价代币时，直接传报价对编号，当吃单方向为拿走报价代币时，传报价对编号加65536
+    /// @param pairIndex 报价对编号。吃单方向为拿走计价代币时，直接传报价对编号，吃单方向为拿走报价代币时，报价对编号加65536
     /// @param index The position of the sheet in priceSheetList[token]
     /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
     /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
@@ -242,19 +197,19 @@ interface INestBatchMining {
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return List of price sheets
-    function list(uint channelId, uint pairIndex, uint offset, uint count, uint order) external view returns (PriceSheetView[] memory);
+    function list(
+        uint channelId, 
+        uint pairIndex, 
+        uint offset, 
+        uint count, 
+        uint order
+    ) external view returns (PriceSheetView[] memory);
 
     /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
     /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
     /// @param channelId 报价通道编号
     /// @param indices 报价单二维数组，外层对应通道号，内层对应报价单号，如果仅关闭后面的报价对，则前面的报价对数组传空数组
     function close(uint channelId, uint[][] calldata indices) external;
-
-    // /// @dev The function updates the statistics of price sheets
-    // ///     It calculates from priceInfo to the newest that is effective.
-    // /// @param channelId 报价通道编号
-    // /// @param pairIndex 报价对编号
-    // function stat(uint channelId, uint pairIndex) external;
 
     /// @dev View the number of assets specified by the user
     /// @param tokenAddress Destination token address
