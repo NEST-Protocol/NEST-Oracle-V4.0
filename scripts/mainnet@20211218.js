@@ -59,7 +59,7 @@ exports.deploy = async function() {
     console.log('hbtc: ' + hbtc.address);
 
     //const pusd = await TestERC20.deploy('PUSD', 'PUSD', 18);
-    const pusd = await TestERC20.attach('0x0316EB71485b0Ab14103307bf65a021042c6d380');
+    const pusd = await TestERC20.attach('0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0');
     console.log('pusd: ' + pusd.address);
 
     //const nestGovernance = await upgrades.deployProxy(NestGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
@@ -70,8 +70,8 @@ exports.deploy = async function() {
     //const nestBatchPlatform2 = await NestBatchPlatform2.attach('0x0000000000000000000000000000000000000000');
     console.log('nestBatchPlatform2: ' + nestBatchPlatform2.address);
 
-    console.log('6. nestBatchPlatform2.update()');
-    await nestBatchPlatform2.update(nestGovernance.address);
+    //console.log('6. nestBatchPlatform2.update()');
+    //await nestBatchPlatform2.update(nestGovernance.address);
 
     console.log('11. nestBatchPlatform2.setConfig()');
     await nestBatchPlatform2.setConfig({

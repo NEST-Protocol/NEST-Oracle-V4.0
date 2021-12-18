@@ -52,7 +52,7 @@ describe('NestOpenMining', function() {
             // 衰减系数，万分制。8000
             reductionRate: 8000,
 
-            tokens: [eth.address, hbtc.address, nest.address]
+            tokens: [hbtc.address]
         });
 
         await nest.approve(nestBatchPlatform2.address, 100000000000000000000000000n);
