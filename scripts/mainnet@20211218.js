@@ -45,6 +45,14 @@ exports.deploy = async function() {
 
     // PUSD: 0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0
 
+    //     ** 开始部署合约 mainnet@20211218.js **
+    // nest: 0x04abEdA201850aC0124161F037Efd70c74ddC74C
+    // usdt: 0xdAC17F958D2ee523a2206206994597C13D831ec7
+    // hbtc: 0x0316EB71485b0Ab14103307bf65a021042c6d380
+    // pusd: 0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0
+    // nestGovernance: 0xA2eFe217eD1E56C743aeEe1257914104Cf523cf5
+    // nestBatchPlatform2: 0xE544cF993C7d477C7ef8E91D28aCA250D135aa03
+
     // 1. 部署依赖合约
     //const nest = await IBNEST.deploy();
     const nest = await TestERC20.attach('0x04abEdA201850aC0124161F037Efd70c74ddC74C');
@@ -66,25 +74,25 @@ exports.deploy = async function() {
     const nestGovernance = await NestGovernance.attach('0xA2eFe217eD1E56C743aeEe1257914104Cf523cf5');
     console.log('nestGovernance: ' + nestGovernance.address);
 
-    const nestBatchPlatform2 = await upgrades.deployProxy(NestBatchPlatform2, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestBatchPlatform2 = await NestBatchPlatform2.attach('0x0000000000000000000000000000000000000000');
+    //const nestBatchPlatform2 = await upgrades.deployProxy(NestBatchPlatform2, [nestGovernance.address], { initializer: 'initialize' });
+    const nestBatchPlatform2 = await NestBatchPlatform2.attach('0xE544cF993C7d477C7ef8E91D28aCA250D135aa03');
     console.log('nestBatchPlatform2: ' + nestBatchPlatform2.address);
 
     //console.log('6. nestBatchPlatform2.update()');
     //await nestBatchPlatform2.update(nestGovernance.address);
 
-    console.log('11. nestBatchPlatform2.setConfig()');
-    await nestBatchPlatform2.setConfig({
-        // -- Public configuration
-        // The number of times the sheet assets have doubled. 4
-        maxBiteNestedLevel: 4,
+    // console.log('11. nestBatchPlatform2.setConfig()');
+    // await nestBatchPlatform2.setConfig({
+    //     // -- Public configuration
+    //     // The number of times the sheet assets have doubled. 4
+    //     maxBiteNestedLevel: 4,
         
-        // Price effective block interval. 20
-        priceEffectSpan: 20,
+    //     // Price effective block interval. 20
+    //     priceEffectSpan: 20,
 
-        // The amount of nest to pledge for each post (Unit: 1000). 100
-        pledgeNest: 100
-    });
+    //     // The amount of nest to pledge for each post (Unit: 1000). 100
+    //     pledgeNest: 100
+    // });
 
     console.log('---------- OK ----------');
     
