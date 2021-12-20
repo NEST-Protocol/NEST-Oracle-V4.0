@@ -72,14 +72,14 @@ interface INestBatchMining {
 
     // 报价通道配置
     struct ChannelConfig {
-        // 计价代币地址, 0表示eth
-        address token0;
-        // 计价代币单位
-        uint96 unit;
+        // // 计价代币地址, 0表示eth
+        // address token0;
+        // // 计价代币单位
+        // uint96 unit;
 
-        // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
-        // 出矿代币地址
-        address reward;
+        // // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
+        // // 出矿代币地址
+        // address reward;
         // 每个区块的标准出矿量
         uint96 rewardPerBlock;
 
@@ -97,7 +97,7 @@ interface INestBatchMining {
         // 衰减系数，万分制。8000
         uint16 reductionRate;
 
-        address[] tokens;
+        //address[] tokens;
     }
 
     /// @dev 报价对视图
@@ -155,10 +155,25 @@ interface INestBatchMining {
     /// @dev Get configuration
     /// @return Configuration object
     function getConfig() external view returns (Config memory);
-    
+
     /// @dev 开通报价通道
+    /// @param token0 计价代币地址, 0表示eth
+    /// @param unit 计价代币单位
+    /// @param reward 出矿代币地址
+    /// @param tokens 报价代币数组
     /// @param config 报价通道配置
-    function open(ChannelConfig calldata config) external;
+    function open(
+        address token0, 
+        uint96 unit, 
+        address reward, 
+        address[] calldata tokens,
+        ChannelConfig calldata config
+    ) external;
+
+    /// @dev 修改通道配置
+    /// @param channelId 报价通道
+    /// @param config 报价通道配置
+    function modify(uint channelId, ChannelConfig calldata config) external;
 
     /// @dev 向报价通道注入矿币
     /// @param channelId 报价通道

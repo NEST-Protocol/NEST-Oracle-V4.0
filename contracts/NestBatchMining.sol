@@ -196,52 +196,81 @@ contract NestBatchMining is NestBase, INestBatchMining {
     }
 
     /// @dev 开通报价通道
+    /// @param token0 计价代币地址, 0表示eth
+    /// @param unit 计价代币单位
+    /// @param reward 出矿代币地址
+    /// @param tokens 报价代币数组
     /// @param config 报价通道配置
-    function open(ChannelConfig calldata config) external override {
+    function open(
+        address token0, 
+        uint96 unit, 
+        address reward, 
+        address[] calldata tokens,
+        ChannelConfig calldata config
+    ) external override {
 
-        // 计价代币
-        address token0 = config.token0;
+        //// 计价代币
+        //address token0 = config.token0;
         // 矿币
-        address reward = config.reward;
+        //address reward = config.reward;
 
         // 触发开通事件
-        emit Open(_channels.length, token0, config.unit, reward);
+        emit Open(_channels.length, token0, unit, reward);
         
         PriceChannel storage channel = _channels.push();
 
         // 计价代币
         channel.token0 = token0;
         // 计价代币单位
-        channel.unit = config.unit;
+        channel.unit = unit;
 
         // 矿币
         channel.reward = reward;
-        // 单位区块出矿币数量
-        channel.rewardPerBlock = config.rewardPerBlock;
 
         channel.vault = uint128(0);
         channel.rewards = uint96(0);
-        // Post fee(0.0001eth，DIMI_ETHER). 1000
-        channel.postFeeUnit = config.postFeeUnit;
-        channel.count = uint16(config.tokens.length);
+        channel.count = uint16(tokens.length);
         
         // 管理地址
         channel.governance = msg.sender;
         // 创世区块
         channel.genesisBlock = uint32(block.number);
+
+        // 遍历创建报价对
+        for (uint i = 0; i < tokens.length; ++i) {
+            require(token0 != tokens[i], "NOM:token can't equal token0");
+            for (uint j = 0; j < i; ++j) {
+                require(tokens[i] != tokens[j], "NOM:token reiterated");
+            }
+            channel.pairs[i].target = tokens[i];
+        }
+
+        _modify(channel, config);
+    }
+
+    /// @dev 修改通道配置
+    /// @param channelId 报价通道
+    /// @param config 报价通道配置
+    function modify(uint channelId, ChannelConfig calldata config) external override {
+        PriceChannel storage channel = _channels[channelId];
+        require(channel.governance == msg.sender, "NOM:not governance");
+        _modify(channel, config);
+    }
+
+    /// @dev 修改通道配置
+    /// @param channel 报价通道
+    /// @param config 报价通道配置
+    function _modify(PriceChannel storage channel, ChannelConfig calldata config) private {
+        // 单位区块出矿币数量
+        channel.rewardPerBlock = config.rewardPerBlock;
+
+        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        channel.postFeeUnit = config.postFeeUnit;
+
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         channel.singleFee = config.singleFee;
         // 衰减系数，万分制。8000
         channel.reductionRate = config.reductionRate;
-
-        // 遍历创建报价对
-        for (uint i = 0; i < config.tokens.length; ++i) {
-            require(token0 != config.tokens[i], "NOM:token can't equal token0");
-            for (uint j = 0; j < i; ++j) {
-                require(config.tokens[i] != config.tokens[j], "NOM:token reiterated");
-            }
-            channel.pairs[i].target = config.tokens[i];
-        }
     }
 
     /// @dev 添加报价代币，与计价代币形成新的报价对（暂不支持删除，请谨慎添加）
