@@ -150,18 +150,18 @@ describe('NestOpenMining', function() {
             let ci = await nestBatchMining.getChannelInfo(0);
             console.log(UI(ci));
             console.log('owner: ' + owner.address);
-            expect(ci.governance).to.eq(owner.address);
+            expect(ci.opener).to.eq(owner.address);
 
-            await nestBatchMining.changeGovernance(0, addr1.address);
+            await nestBatchMining.changeOpener(0, addr1.address);
             ci = await nestBatchMining.getChannelInfo(0);
             console.log(UI(ci));
             console.log('addr1: ' + addr1.address);
-            expect(ci.governance).to.eq(addr1.address);
+            expect(ci.opener).to.eq(addr1.address);
 
-            await nestBatchMining.connect(addr1).changeGovernance(0, owner.address);
+            await nestBatchMining.connect(addr1).changeOpener(0, owner.address);
             ci = await nestBatchMining.getChannelInfo(0);
             console.log(UI(ci));
-            expect(ci.governance).to.eq(owner.address);
+            expect(ci.opener).to.eq(owner.address);
 
             if (true) {
                 console.log('5. pay');

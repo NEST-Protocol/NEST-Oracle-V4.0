@@ -133,8 +133,8 @@ interface INestBatchMining {
         // 报价对数量
         uint16 count;
 
-        // 管理地址
-        address governance;
+        // 开通者地址
+        address opener;
         // 创世区块
         uint32 genesisBlock;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100

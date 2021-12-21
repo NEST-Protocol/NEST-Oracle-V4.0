@@ -109,8 +109,8 @@ contract NestBatchMining is NestBase, INestBatchMining {
         // 报价对数量
         uint16 count;
 
-        // 管理地址
-        address governance;
+        // 开通者地址
+        address opener;
         // 创世区块
         uint32 genesisBlock;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
@@ -231,8 +231,8 @@ contract NestBatchMining is NestBase, INestBatchMining {
         channel.rewards = uint96(0);
         channel.count = uint16(tokens.length);
         
-        // 管理地址
-        channel.governance = msg.sender;
+        // 开通者地址
+        channel.opener = msg.sender;
         // 创世区块
         channel.genesisBlock = uint32(block.number);
 
@@ -253,7 +253,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @param config 报价通道配置
     function modify(uint channelId, ChannelConfig calldata config) external override {
         PriceChannel storage channel = _channels[channelId];
-        require(channel.governance == msg.sender, "NOM:not governance");
+        require(channel.opener == msg.sender, "NOM:not opener");
         _modify(channel, config);
     }
 
@@ -278,7 +278,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @param target 目标代币地址
     function addPair(uint channelId, address target) external {
         PriceChannel storage channel = _channels[channelId];
-        require(channel.governance == msg.sender, "NOM:not governance");
+        require(channel.opener == msg.sender, "NOM:not opener");
         require(channel.token0 != target, "NOM:token can't equal token0");
         uint count = uint(channel.count);
         for (uint j = 0; j < count; ++j) {
@@ -307,7 +307,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     /// @param vault 取出矿币数量
     function decrease(uint channelId, uint128 vault) external override {
         PriceChannel storage channel = _channels[channelId];
-        require(channel.governance == msg.sender, "NOM:not governance");
+        require(channel.opener == msg.sender, "NOM:not opener");
         address reward = channel.reward;
         channel.vault -= vault;
         if (reward == address(0)) {
@@ -319,11 +319,11 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
     /// @dev 修改治理权限地址
     /// @param channelId 报价通道
-    /// @param newGovernance 新治理权限地址
-    function changeGovernance(uint channelId, address newGovernance) external {
+    /// @param newOpener 新治理权限地址
+    function changeOpener(uint channelId, address newOpener) external {
         PriceChannel storage channel = _channels[channelId];
-        require(channel.governance == msg.sender, "NOM:not governance");
-        channel.governance = newGovernance;
+        require(channel.opener == msg.sender, "NOM:not opener");
+        channel.opener = newOpener;
     }
 
     /// @dev 获取报价通道信息
@@ -362,8 +362,8 @@ contract NestBatchMining is NestBase, INestBatchMining {
             // 报价对数量
             channel.count,
 
-            // 管理地址
-            channel.governance,
+            // 开通者地址
+            channel.opener,
             // 创世区块
             channel.genesisBlock,
             // Single query fee (0.0001 ether, DIMI_ETHER). 100
@@ -791,7 +791,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     function pay(uint channelId, address to, uint value) external override {
 
         PriceChannel storage channel = _channels[channelId];
-        require(channel.governance == msg.sender, "NOM:!governance");
+        require(channel.opener == msg.sender, "NOM:!opener");
         channel.rewards -= _toUInt96(value);
         // pay
         payable(to).transfer(value);
@@ -803,7 +803,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
     function donate(uint channelId, uint value) external override {
 
         PriceChannel storage channel = _channels[channelId];
-        require(channel.governance == msg.sender, "NOM:!governance");
+        require(channel.opener == msg.sender, "NOM:!opener");
         channel.rewards -= _toUInt96(value);
         INestLedger(INestMapping(_governance).getNestLedgerAddress()).addETHReward { value: value } (channelId);
     }
