@@ -46,8 +46,8 @@ npx truffle migrate --network ropsten
 
 ## Contract Addresses
 
-### 2021-11-20@bsc_main
-| Name | Interfaces | rinkeby |
+### 2021-12-18@mainnet
+| Name | Interfaces | mainnet |
 | ---- | ---- | ---- |
 | nest | IERC20 | 0x04abEdA201850aC0124161F037Efd70c74ddC74C |
 | usdt | IERC20 | 0xdAC17F958D2ee523a2206206994597C13D831ec7 |
@@ -57,7 +57,7 @@ npx truffle migrate --network ropsten
 | nestBatchPlatform2 | INestBatchMining, INestBatchPriceView, INestBatchPrice2 | 0xE544cF993C7d477C7ef8E91D28aCA250D135aa03 |
 
 ### 2021-11-20@bsc_main
-| Name | Interfaces | rinkeby |
+| Name | Interfaces | bsc_main |
 | ---- | ---- | ---- |
 | nest | IERC20 | 0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7 |
 | pusd | IERC20 | 0x9b2689525e07406D8A6fB1C40a1b86D2cd34Cbb2 |
