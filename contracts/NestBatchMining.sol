@@ -767,15 +767,18 @@ contract NestBatchMining is NestBase, INestBatchMining {
         uint index
     ) external view override returns (uint minedBlocks, uint totalShares) {
 
+        // PriceSheet[] storage sheets = _channels[channelId].pairs[0].sheets;
+        // PriceSheet memory sheet = sheets[index];
+
+        // // The bite sheet or ntoken sheet doesn't mining
+        // if (uint(sheet.shares) == 0) {
+        //     return (0, 0);
+        // }
+
+        // return _calcMinedBlocks(sheets, index, sheet);
+
         PriceSheet[] storage sheets = _channels[channelId].pairs[0].sheets;
-        PriceSheet memory sheet = sheets[index];
-
-        // The bite sheet or ntoken sheet doesn't mining
-        if (uint(sheet.shares) == 0) {
-            return (0, 0);
-        }
-
-        return _calcMinedBlocks(sheets, index, sheet);
+        return _calcMinedBlocks(sheets, index, sheets[index]);
     }
 
     /// @dev The function returns eth rewards of specified ntoken
@@ -1155,7 +1158,7 @@ contract NestBatchMining is NestBase, INestBatchMining {
 
     // 将uint转为uint96
     function _toUInt96(uint value) internal pure returns (uint96) {
-        require(value < 1000000000000000000000000);
+        require(value < 0x1000000000000000000000000);
         return uint96(value);
     }
 
