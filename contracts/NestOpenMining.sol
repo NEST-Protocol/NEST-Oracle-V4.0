@@ -159,6 +159,27 @@ contract NestOpenMining is NestBase, INestOpenMining {
     // Ethereum average block time interval, 14 seconds
     uint constant ETHEREUM_BLOCK_TIMESPAN = 3;
 
+    // Nest ore drawing attenuation interval. 2400000 blocks, about one year
+    uint constant NEST_REDUCTION_SPAN = 10000000;
+    // The decay limit of nest ore drawing becomes stable after exceeding this interval. 
+    // 24 million blocks, about 10 years
+    uint constant NEST_REDUCTION_LIMIT = 100000000; //NEST_REDUCTION_SPAN * 10;
+    // Attenuation gradient array, each attenuation step value occupies 16 bits. The attenuation value is an integer
+    uint constant NEST_REDUCTION_STEPS = 0x280035004300530068008300A300CC010001400190;
+        // 0
+        // | (uint(400 / uint(1)) << (16 * 0))
+        // | (uint(400 * 8 / uint(10)) << (16 * 1))
+        // | (uint(400 * 8 * 8 / uint(10 * 10)) << (16 * 2))
+        // | (uint(400 * 8 * 8 * 8 / uint(10 * 10 * 10)) << (16 * 3))
+        // | (uint(400 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10)) << (16 * 4))
+        // | (uint(400 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10)) << (16 * 5))
+        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10)) << (16 * 6))
+        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 7))
+        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 8))
+        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 9))
+        // //| (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 10));
+        // | (uint(40) << (16 * 10));
+    
     /* ========== Governance ========== */
 
     /// @dev Modify configuration
@@ -174,27 +195,55 @@ contract NestOpenMining is NestBase, INestOpenMining {
     }
 
     /// @dev 开通报价通道
+    /// @param token0 计价代币地址, 0表示eth
+    /// @param unit 计价代币单位
+    /// @param reward 出矿代币地址
+    /// @param token1 报价代币地址，0表示eth
     /// @param config 报价通道配置
-    function open(ChannelConfig calldata config) external override {
+    function open(
+        address token0, 
+        uint96 unit, 
+        address reward, 
+        address token1, 
+        ChannelConfig calldata config
+    ) external override {
 
-        address token0 = config.token0;
-        address token1 = config.token1;
-        address reward = config.reward;
+        // address token0 = config.token0;
+        // address token1 = config.token1;
+        // address reward = config.reward;
 
         require(token0 != token1, "NOM:token0 can't equal token1");
-        emit Open(_channels.length, token0, config.unit, token1, reward);
+        emit Open(_channels.length, token0, unit, token1, reward);
         PriceChannel storage channel = _channels.push();
         channel.token0 = token0;
-        channel.unit = config.unit;
+        channel.unit = unit;
         channel.token1 = token1;
-        channel.rewardPerBlock = config.rewardPerBlock;
         channel.reward = reward;
         // 管理地址
         channel.governance = msg.sender;
         // 创世区块
         channel.genesisBlock = uint32(block.number);
+
+        _modify(channel, config);
+    }
+
+    /// @dev 修改通道参数
+    /// @param channelId 报价通道
+    /// @param config 报价通道配置
+    function modify(uint channelId, ChannelConfig calldata config) external override {
+        PriceChannel storage channel = _channels[channelId];
+        require(channel.governance == msg.sender, "NOM:not governance");
+        _modify(channel, config);
+    }
+
+    // 修改配置
+    function _modify(PriceChannel storage channel, ChannelConfig calldata config) private {
+        // 单位区块出矿币数量
+        channel.rewardPerBlock = config.rewardPerBlock;
+
         // Post fee(0.0001eth，DIMI_ETHER). 1000
         channel.postFeeUnit = config.postFeeUnit;
+
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         channel.singleFee = config.singleFee;
         // 衰减系数，万分制。8000
@@ -222,12 +271,12 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:not governance");
         address reward = channel.reward;
+        channel.vault -= vault;
         if (reward == address(0)) {
             payable(msg.sender).transfer(vault);
         } else {
             TransferHelper.safeTransfer(reward, msg.sender, vault);
         }
-        channel.vault -= vault;
     }
 
     // /// @dev 向报价通道注入NToken矿币
@@ -305,6 +354,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
         // 1. Check arguments
         require(scale == 1, "NOM:!scale");
+        require(equivalent > 0, "NM:!price");
 
         // 2. Check price channel
         // 3. Load token channel and sheets
@@ -369,7 +419,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceSheet memory sheet = sheets[index];
 
         // 3. Check state
-        require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
         require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
 
         // 4. Update the bitten sheet
@@ -379,23 +428,14 @@ contract NestOpenMining is NestBase, INestOpenMining {
         sheets[index] = sheet;
 
         // 5. Calculate the number of eth, token and nest needed, and freeze them
-        uint needEthNum;
+        uint needEthNum = takeNum;
         uint level = uint(sheet.level);
-
-        // When the level of the sheet is less than 4, both the nest and the scale of the offer are doubled
-        if (level < uint(config.maxBiteNestedLevel)) {
-            // Double scale sheet
-            needEthNum = takeNum << 1;
+        if (level < 255) {
+            if (level < uint(config.maxBiteNestedLevel)) {
+                // Double scale sheet
+                needEthNum <<= 1;
+            }
             ++level;
-        } 
-        // When the level of the sheet reaches 4 or more, nest doubles, but the scale does not
-        else {
-            // Single scale sheet
-            needEthNum = takeNum;
-            // It is possible that the length of a single chain exceeds 255. When the length of a chain reaches 4 
-            // or more, there is no logical dependence on the specific value of the contract, and the count will
-            // not increase after it is accumulated to 255
-            if (level < 255) ++level;
         }
 
         // Number of nest to be pledged
@@ -453,7 +493,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
         PriceSheet memory sheet = sheets[index];
 
         // 3. Check state
-        require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
         require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
 
         // 4. Update the bitten sheet
@@ -463,23 +502,14 @@ contract NestOpenMining is NestBase, INestOpenMining {
         sheets[index] = sheet;
 
         // 5. Calculate the number of eth, token and nest needed, and freeze them
-        uint needEthNum;
+        uint needEthNum = takeNum;
         uint level = uint(sheet.level);
-
-        // When the level of the sheet is less than 4, both the nest and the scale of the offer are doubled
-        if (level < uint(config.maxBiteNestedLevel)) {
-            // Double scale sheet
-            needEthNum = takeNum << 1;
+        if (level < 255) {
+            if (level < uint(config.maxBiteNestedLevel)) {
+                // Double scale sheet
+                needEthNum <<= 1;
+            }
             ++level;
-        } 
-        // When the level of the sheet reaches 4 or more, nest doubles, but the scale does not
-        else {
-            // Single scale sheet
-            needEthNum = takeNum;
-            // It is possible that the length of a single chain exceeds 255. When the length of a chain reaches 4
-            // or more, there is no logical dependence on the specific value of the contract, and the count will
-            // not increase after it is accumulated to 255
-            if (level < 255) ++level;
         }
 
         // Number of nest to be pledged
@@ -661,15 +691,18 @@ contract NestOpenMining is NestBase, INestOpenMining {
         uint index
     ) external view override returns (uint minedBlocks, uint totalShares) {
 
+        // PriceSheet[] storage sheets = _channels[channelId].sheets;
+        // PriceSheet memory sheet = sheets[index];
+
+        // // The bite sheet or ntoken sheet doesn't mining
+        // if (uint(sheet.shares) == 0) {
+        //     return (0, 0);
+        // }
+
+        // return _calcMinedBlocks(sheets, index, sheet);
+
         PriceSheet[] storage sheets = _channels[channelId].sheets;
-        PriceSheet memory sheet = sheets[index];
-
-        // The bite sheet or ntoken sheet doesn't mining
-        if (uint(sheet.shares) == 0) {
-            return (0, 0);
-        }
-
-        return _calcMinedBlocks(sheets, index, sheet);
+        return _calcMinedBlocks(sheets, index, sheets[index]);
     }
 
     /// @dev The function returns eth rewards of specified ntoken
@@ -1092,13 +1125,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
         }
     }
 
-    // /// @dev Gets the address corresponding to the given index number
-    // /// @param index The index number of the specified address
-    // /// @return The address corresponding to the given index number
-    // function _indexAddress(uint index) public view returns (address) {
-    //     return _accounts[index].addr;
-    // }
-
     /// @dev Gets the index number of the specified address. If it does not exist, register
     /// @param addr Destination address
     /// @return The index number of the specified address
@@ -1114,27 +1140,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
         return index;
     }
-
-    // Nest ore drawing attenuation interval. 2400000 blocks, about one year
-    uint constant NEST_REDUCTION_SPAN = 10000000;
-    // The decay limit of nest ore drawing becomes stable after exceeding this interval. 
-    // 24 million blocks, about 10 years
-    uint constant NEST_REDUCTION_LIMIT = 100000000; //NEST_REDUCTION_SPAN * 10;
-    // Attenuation gradient array, each attenuation step value occupies 16 bits. The attenuation value is an integer
-    uint constant NEST_REDUCTION_STEPS = 0x280035004300530068008300A300CC010001400190;
-        // 0
-        // | (uint(400 / uint(1)) << (16 * 0))
-        // | (uint(400 * 8 / uint(10)) << (16 * 1))
-        // | (uint(400 * 8 * 8 / uint(10 * 10)) << (16 * 2))
-        // | (uint(400 * 8 * 8 * 8 / uint(10 * 10 * 10)) << (16 * 3))
-        // | (uint(400 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10)) << (16 * 4))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10)) << (16 * 5))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10)) << (16 * 6))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 7))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 8))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 9))
-        // //| (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 10));
-        // | (uint(40) << (16 * 10));
 
     // // Calculation of attenuation gradient
     // function _reduction(uint delta) private pure returns (uint) {
@@ -1330,7 +1335,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
             bool flag = index == 0;
             if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
+                if (totalEthNum > 0 && height + priceEffectSpan < block.number) {
                     return (height + priceEffectSpan, totalTokenValue / totalEthNum);
                 }
                 if (flag) {
@@ -1370,7 +1375,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
             bool flag = index == 0;
             if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height + priceEffectSpan <= block.number) {
+                if (totalEthNum > 0 && height + priceEffectSpan < block.number) {
                     array[i++] = height + priceEffectSpan;
                     array[i++] = totalTokenValue / totalEthNum;
                 }
@@ -1390,33 +1395,33 @@ contract NestOpenMining is NestBase, INestOpenMining {
         return array;
     } 
 
-    /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
-    /// @param channel 报价通道
-    /// @return latestPriceBlockNumber The block number of latest price
-    /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
-    /// @return triggeredPriceBlockNumber The block number of triggered price
-    /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    /// @return triggeredAvgPrice Average price
-    /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    function _latestPriceAndTriggeredPriceInfo(PriceChannel storage channel) internal view 
-    returns (
-        uint latestPriceBlockNumber,
-        uint latestPriceValue,
-        uint triggeredPriceBlockNumber,
-        uint triggeredPriceValue,
-        uint triggeredAvgPrice,
-        uint triggeredSigmaSQ
-    ) {
-        (latestPriceBlockNumber, latestPriceValue) = _latestPrice(channel);
-        (
-            triggeredPriceBlockNumber, 
-            triggeredPriceValue, 
-            triggeredAvgPrice, 
-            triggeredSigmaSQ
-        ) = _triggeredPriceInfo(channel);
-    }
+    // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
+    // /// @param channel 报价通道
+    // /// @return latestPriceBlockNumber The block number of latest price
+    // /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
+    // /// @return triggeredPriceBlockNumber The block number of triggered price
+    // /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
+    // /// @return triggeredAvgPrice Average price
+    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
+    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
+    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
+    // function _latestPriceAndTriggeredPriceInfo(PriceChannel storage channel) internal view 
+    // returns (
+    //     uint latestPriceBlockNumber,
+    //     uint latestPriceValue,
+    //     uint triggeredPriceBlockNumber,
+    //     uint triggeredPriceValue,
+    //     uint triggeredAvgPrice,
+    //     uint triggeredSigmaSQ
+    // ) {
+    //     (latestPriceBlockNumber, latestPriceValue) = _latestPrice(channel);
+    //     (
+    //         triggeredPriceBlockNumber, 
+    //         triggeredPriceValue, 
+    //         triggeredAvgPrice, 
+    //         triggeredSigmaSQ
+    //     ) = _triggeredPriceInfo(channel);
+    // }
 
     /// @dev Returns lastPriceList and triggered price info
     /// @param channel 报价通道

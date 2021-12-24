@@ -24,27 +24,6 @@ interface INestOpenMining {
     
     /// @dev Nest mining configuration structure
     struct Config {
-        
-        // // Eth number of each post. 30
-        // // We can stop post and taking orders by set postEthUnit to 0 (closing and withdraw are not affected)
-        // uint32 postEthUnit;
-
-        // // Post fee(0.0001eth，DIMI_ETHER). 1000
-        // uint16 postFeeUnit;
-
-        // // Proportion of miners digging(10000 based). 8000
-        // uint16 minerNestReward;
-        
-        // // The proportion of token dug by miners is only valid for the token created in version 3.0
-        // // (10000 based). 9500
-        // uint16 minerNTokenReward;
-
-        // // When the circulation of ntoken exceeds this threshold, post() is prohibited(Unit: 10000 ether). 500
-        // uint32 doublePostThreshold;
-        
-        // // The limit of ntoken mined blocks. 100
-        // uint16 ntokenMinedBlockLimit;
-
         // -- Public configuration
         // The number of times the sheet assets have doubled. 4
         uint8 maxBiteNestedLevel;
@@ -92,19 +71,19 @@ interface INestOpenMining {
 
     // 报价通道配置
     struct ChannelConfig {
-        // 计价代币地址, 0表示eth
-        address token0;
-        // 计价代币单位
-        uint96 unit;
+        // // 计价代币地址, 0表示eth
+        // address token0;
+        // // 计价代币单位
+        // uint96 unit;
 
-        // 报价代币地址，0表示eth
-        address token1;
+        // // 报价代币地址，0表示eth
+        // address token1;
         // 每个区块的标准出矿量
         uint96 rewardPerBlock;
 
-        // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
-        // 出矿代币地址
-        address reward;
+        // // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
+        // // 出矿代币地址
+        // address reward;
         // 矿币总量
         //uint96 vault;
 
@@ -178,8 +157,23 @@ interface INestOpenMining {
     // function open(address token0, uint unit, address token1, address reward) external;
 
     /// @dev 开通报价通道
+    /// @param token0 计价代币地址, 0表示eth
+    /// @param unit 计价代币单位
+    /// @param reward 出矿代币地址
+    /// @param token1 报价代币地址，0表示eth
     /// @param config 报价通道配置
-    function open(ChannelConfig calldata config) external;
+    function open(
+        address token0, 
+        uint96 unit, 
+        address reward, 
+        address token1, 
+        ChannelConfig calldata config
+    ) external;
+
+    /// @dev 修改通道参数
+    /// @param channelId 报价通道
+    /// @param config 报价通道配置
+    function modify(uint channelId, ChannelConfig calldata config) external;
 
     /// @dev 向报价通道注入矿币
     /// @param channelId 报价通道

@@ -61,22 +61,27 @@ describe('NestOpenMining', function() {
         await hbtc.connect(addr1).approve(nestOpenMining.address, 10000000000000000000000000n);
 
         //await nestOpenMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
-        await nestOpenMining.open({
-            // 计价代币地址, 0表示eth
-            token0: hbtc.address,
-            // 计价代币单位
-            unit: 1000000000000000000n,
+        await nestOpenMining.open(
+            hbtc.address,
+            1000000000000000000n,
+            nest.address,
+            usdt.address,
+            {
+            // // 计价代币地址, 0表示eth
+            // token0: hbtc.address,
+            // // 计价代币单位
+            // unit: 1000000000000000000n,
     
-            // 报价代币地址，0表示eth
-            token1: usdt.address,
+            // // 报价代币地址，0表示eth
+            // token1: usdt.address,
             // 每个区块的标准出矿量
             rewardPerBlock: 1000000000000000000n,
     
-            // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
-            // 出矿代币地址
-            reward: nest.address,
-            // 矿币总量
-            //uint96 vault;
+            // // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
+            // // 出矿代币地址
+            // reward: nest.address,
+            // // 矿币总量
+            // //uint96 vault;
     
             // 管理地址
             //address governance;
