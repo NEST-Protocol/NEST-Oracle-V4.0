@@ -23,7 +23,8 @@ exports.deploy = async function() {
     // nestGovernance: 0x5691dc0770D55B9469a3242DA282754687687935
     // nestLedger: 0x78D5E2fC85969e51580fd2C0Fd6D056a444167cE
     // nestOpenMining: 0xF2f9E62f52389EF223f5Fa8b9926e95386935277
-
+    // proxyAdmin: 0xC066F99116449A312e757020cEceE8060f151002
+    
     // 1. 部署依赖合约
     //const nest = await IBNEST.deploy();
     const nest = await TestERC20.attach('0x821edD79cc386E56FeC9DA5793b87a3A52373cdE');

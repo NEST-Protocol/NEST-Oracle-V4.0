@@ -41,19 +41,6 @@ contract NestBase {
         _governance = nestGovernanceAddress;
     }
 
-    /// @dev Migrate funds from current contract to NestLedger
-    /// @param tokenAddress Destination token address.(0 means eth)
-    /// @param value Migrate amount
-    function migrate(address tokenAddress, uint value) external onlyGovernance {
-
-        address to = INestGovernance(_governance).getNestLedgerAddress();
-        if (tokenAddress == address(0)) {
-            INestLedger(to).addETHReward { value: value } (0);
-        } else {
-            TransferHelper.safeTransfer(tokenAddress, to, value);
-        }
-    }
-
     //---------modifier------------
 
     modifier onlyGovernance() {
