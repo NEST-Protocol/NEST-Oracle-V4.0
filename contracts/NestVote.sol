@@ -7,10 +7,10 @@ import "./interfaces/INestVote.sol";
 import "./interfaces/IVotePropose.sol";
 import "./interfaces/INestGovernance.sol";
 import "./interfaces/IProxyAdmin.sol";
-import "./NestBase.sol";
+import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev nest voting contract, implemented the voting logic
-contract NestVote is NestBase, INestVote {
+contract NestVote is NestFrequentlyUsed, INestVote {
     
     // constructor() { }
 
@@ -82,10 +82,10 @@ contract NestVote is NestBase, INestVote {
     uint constant NEST_TOTAL_SUPPLY = 10000000000 ether;
 
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(nestGovernanceAddress) when overriding, and override method without onlyGovernance
-    /// @param nestGovernanceAddress INestGovernance implementation contract address
-    function update(address nestGovernanceAddress) public override {
-        super.update(nestGovernanceAddress);
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public override {
+        super.update(newGovernance);
 
         (
             //address nestTokenAddress
@@ -108,7 +108,7 @@ contract NestVote is NestBase, INestVote {
             _nnIncomeAddress, 
             //address nTokenControllerAddress
               
-        ) = INestGovernance(nestGovernanceAddress).getBuiltinAddress();
+        ) = INestGovernance(newGovernance).getBuiltinAddress();
     }
 
     /// @dev Modify configuration
