@@ -19,28 +19,28 @@ describe('NestOpenMining', function() {
         // const newNestOpenMining = await NestOpenMining.deploy();
         // console.log('newNestOpenMining: ' + newNestOpenMining.address);
 
-        await nestOpenMining.modify(0, {
-            // // 报价代币地址，0表示eth
-            // address token1;
-            // 每个区块的标准出矿量
-            rewardPerBlock: 4000000000000000000n,
-            // // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
-            // // 出矿代币地址
-            // address reward;
-            // 矿币总量
-            //uint96 vault;
+        // await nestOpenMining.modify(0, {
+        //     // // 报价代币地址，0表示eth
+        //     // address token1;
+        //     // 每个区块的标准出矿量
+        //     rewardPerBlock: 4000000000000000000n,
+        //     // // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
+        //     // // 出矿代币地址
+        //     // address reward;
+        //     // 矿币总量
+        //     //uint96 vault;
     
-            // 管理地址
-            //address governance;
-            // 创世区块
-            //uint32 genesisBlock;
-            // Post fee(0.0001eth，DIMI_ETHER). 1000
-            postFeeUnit: 0,
-            // Single query fee (0.0001 ether, DIMI_ETHER). 100
-            singleFee: 2,
-            // 衰减系数，万分制。8000
-            reductionRate: 8000
-        });
+        //     // 管理地址
+        //     //address governance;
+        //     // 创世区块
+        //     //uint32 genesisBlock;
+        //     // Post fee(0.0001eth，DIMI_ETHER). 1000
+        //     postFeeUnit: 0,
+        //     // Single query fee (0.0001 ether, DIMI_ETHER). 100
+        //     singleFee: 2,
+        //     // 衰减系数，万分制。8000
+        //     reductionRate: 8000
+        // });
         return;
         
         // await nestOpenMining.open({

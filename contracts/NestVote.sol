@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.6;
 
-import "./lib/IERC20.sol";
-import "./interface/INestVote.sol";
-import "./interface/IVotePropose.sol";
-import "./interface/INestGovernance.sol";
-import "./interface/IProxyAdmin.sol";
+import "./libs/IERC20.sol";
+import "./interfaces/INestVote.sol";
+import "./interfaces/IVotePropose.sol";
+import "./interfaces/INestGovernance.sol";
+import "./interfaces/IProxyAdmin.sol";
 import "./NestBase.sol";
 
 /// @dev nest voting contract, implemented the voting logic
