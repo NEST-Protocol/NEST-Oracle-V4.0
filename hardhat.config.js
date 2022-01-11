@@ -74,11 +74,9 @@ module.exports = {
     },
     mumbai: {
       url: "https://matic-mumbai.chainstacklabs.com",
-      chainId: 80001,
-      initialBaseFeePerGas: 50e9,
-      gas: 600000,
+      initialBaseFeePerGas: 5e9,
       accounts: [config.account.mumbai.key, config.account.mumbai.userA, config.account.mumbai.userB],
-      timeout: 2000000000
+      timeout: 2000000000,
     },
     hardhat: {
       gas: 6000000,
