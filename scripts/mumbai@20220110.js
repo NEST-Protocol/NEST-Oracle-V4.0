@@ -32,6 +32,7 @@ exports.deploy = async function() {
     // nestGovernance: 0xF0737e3C98f1Ee41251681e2C6ad53Ab92AB0AEa
     // nestLedger: 0xbe388405c5f091f46DA440652f776c9832e0d1c3
     // nestBatchMining: 0xD3E0Effa6A9cEC78C95c1FD0BbcCCA5929068B83
+	// proxyAdmin: 0xAc88d1fBF58E2646E0F4FF60aa436a70753885D9
 
     // 1. 部署依赖合约
     //const nest = await TestERC20.deploy('NEST', 'NEST', 18);
