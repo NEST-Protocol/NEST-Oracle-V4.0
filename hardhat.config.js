@@ -78,6 +78,14 @@ module.exports = {
       accounts: [config.account.mumbai.key, config.account.mumbai.userA, config.account.mumbai.userB],
       timeout: 2000000000,
     },
+    polygon_main: {
+      url: "https://rpc-mainnet.matic.network",
+      chainId: 137,
+      initialBaseFeePerGas: 50e9,
+      gas: 6000000,
+      accounts: [config.account.polygon_main.key, config.account.polygon_main.userA, config.account.polygon_main.userB],
+      timeout: 2000000000
+    },
     hardhat: {
       gas: 6000000,
       initialBaseFeePerGas: 0,

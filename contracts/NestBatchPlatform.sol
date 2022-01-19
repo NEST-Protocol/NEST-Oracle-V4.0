@@ -124,21 +124,6 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
         ) = _triggeredPriceInfo(pair);
     }
 
-    // Payment of transfer fee
-    function _pay(uint channelId, address payback) private returns (PriceChannel storage channel) {
-
-        channel = _channels[channelId];
-        uint fee = uint(channel.singleFee) * DIMI_ETHER;
-        if (msg.value > fee) {
-            //payable(payback).transfer(msg.value - fee);
-            TransferHelper.safeTransferETH(payback, msg.value - fee);
-        } else {
-            require(msg.value == fee, "NOP:!fee");
-        }
-
-        channel.rewards += _toUInt96(fee);
-    }
-
     /// @dev Get the latest trigger price
     /// @param channelId 报价通道编号
     /// @param pairIndex 报价对编号
@@ -288,5 +273,21 @@ contract NestBatchPlatform is NestBatchMining, INestBatchPriceView, INestBatchPr
             triggeredAvgPrice, 
             triggeredSigmaSQ
         ) = _triggeredPriceInfo(pair);
+    }
+
+    // Payment of transfer fee
+    function _pay(uint channelId, address payback) private returns (PriceChannel storage channel) {
+
+        channel = _channels[channelId];
+        uint fee = uint(channel.singleFee) * DIMI_ETHER;
+        if (msg.value > fee) {
+            payable(payback).transfer(msg.value - fee);
+            // TODO: BSC上采用的是老的gas计算策略，直接转账可能导致代理合约gas超出，要改用下面的方式转账
+            //TransferHelper.safeTransferETH(payback, msg.value - fee);
+        } else {
+            require(msg.value == fee, "NOP:!fee");
+        }
+
+        channel.rewards += _toUInt96(fee);
     }
 }
