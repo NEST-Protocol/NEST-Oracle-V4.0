@@ -939,7 +939,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                         tmp = (
                             uint(p0.sigmaSQ) * 9 + 
                             // It is inevitable that prev greater than p0.height
-                            ((tmp * tmp / ETHEREUM_BLOCK_TIMESPAN / (prev - uint(p0.height))) >> 48)
+                            ((tmp * tmp * 1000 / ETHEREUM_BLOCK_TIMESPAN / (prev - uint(p0.height))) >> 48)
                         ) / 10;
 
                         // The current implementation assumes that the volatility cannot exceed 1, and

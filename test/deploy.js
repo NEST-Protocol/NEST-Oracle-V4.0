@@ -40,7 +40,7 @@ describe('NestOpenMining', function() {
         // );
 
         // await nest.transfer(owner.address, 100000000000000000000000000n);
-        await nest.approve(nestBatchMining.address, 1000000000000000000000000000000n)
-        await nestBatchMining.increase(0, 100000000000000000000000000n);
+        //await nest.approve(nestBatchMining.address, 1000000000000000000000000000000n)
+        //await nestBatchMining.increase(0, 100000000000000000000000000n);
     });
 });

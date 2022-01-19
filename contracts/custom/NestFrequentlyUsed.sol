@@ -8,7 +8,7 @@ import "../NestBase.sol";
 // /// @dev Base contract of nest
 // contract NestFrequentlyUsed is NestBase {
 
-//     // Address of nest token contract
+//     // TODO: Address of nest token contract
 //     address constant NEST_TOKEN_ADDRESS = 0x04abEdA201850aC0124161F037Efd70c74ddC74C;
 
 //     // Genesis block number of nest

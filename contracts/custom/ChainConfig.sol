@@ -7,8 +7,8 @@ contract ChainConfig {
 
     // ******** 以太坊 ******** //
 
-    // // Ethereum average block time interval, 14 seconds
-    // uint constant ETHEREUM_BLOCK_TIMESPAN = 14;
+    // // Ethereum average block time interval, 14000 milliseconds
+    // uint constant ETHEREUM_BLOCK_TIMESPAN = 14000;
 
     // // Nest ore drawing attenuation interval. 2400000 blocks, about one year
     // uint constant NEST_REDUCTION_SPAN = 2400000;
@@ -33,8 +33,8 @@ contract ChainConfig {
 
     // ******** BSC ******** //
     
-    // // Ethereum average block time interval, 14 seconds
-    // uint constant ETHEREUM_BLOCK_TIMESPAN = 3;
+    // // Ethereum average block time interval, 3000 milliseconds
+    // uint constant ETHEREUM_BLOCK_TIMESPAN = 3000;
 
     // // Nest ore drawing attenuation interval. 2400000 blocks, about one year
     // uint constant NEST_REDUCTION_SPAN = 10000000;
@@ -59,8 +59,8 @@ contract ChainConfig {
 
     // ******** Ploygon ******** //
 
-    // Ethereum average block time interval, 14 seconds
-    uint constant ETHEREUM_BLOCK_TIMESPAN = 2;
+    // Ethereum average block time interval, 2200 milliseconds
+    uint constant ETHEREUM_BLOCK_TIMESPAN = 2200;
 
     // Nest ore drawing attenuation interval. 2400000 blocks, about one year
     uint constant NEST_REDUCTION_SPAN = 15000000;
