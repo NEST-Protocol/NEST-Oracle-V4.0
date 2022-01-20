@@ -15,6 +15,7 @@ describe('NestOpenMining', function() {
         
         console.log('ok');
         
+        return;
         await nestBatchMining.open(
             pusd.address, 
             2000000000000000000000n, 

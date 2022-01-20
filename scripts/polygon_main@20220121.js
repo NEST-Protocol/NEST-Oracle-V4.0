@@ -7,15 +7,8 @@ const { ethers, upgrades } = require('hardhat');
 
 exports.deploy = async function() {
     
-    const IterableMapping = await ethers.getContractFactory('IterableMapping');
-    const iterableMapping = await IterableMapping.deploy();
     const eth = { address: '0x0000000000000000000000000000000000000000' };
     const TestERC20 = await ethers.getContractFactory('TestERC20');
-    const IBNEST = await ethers.getContractFactory('IBNEST', {
-        libraries: {
-            IterableMapping: iterableMapping.address
-        }
-    });
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestLedger = await ethers.getContractFactory('NestLedger');
     const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
@@ -25,13 +18,13 @@ exports.deploy = async function() {
     console.log('** 开始部署合约 polygon_main@20220121.js **');
     
     // 1. 部署依赖合约
-    const nest = await IBNEST.attach('0x0000000000000000000000000000000000000000');
+    const nest = await TestERC20.attach('0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7');
     console.log('nest: ' + nest.address);
 
-    const pusd = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    const pusd = await TestERC20.attach('0xf26D86043a3133Cc042221Ea178cAED7Fe0eE362');
     console.log('pusd: ' + pusd.address);
 
-    const peth = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    const peth = await TestERC20.attach('0x1E0967e10B5Ef10342d4D71da69c30332666C899');
     console.log('peth: ' + peth.address);
 
     // TODO: 根据DCU的部署情况，观察脚本返回的合约地址是否正确
@@ -76,7 +69,7 @@ exports.deploy = async function() {
         maxBiteNestedLevel: 4,
         
         // Price effective block interval. 20
-        priceEffectSpan: 20,
+        priceEffectSpan: 50,
 
         // The amount of nest to pledge for each post (Unit: 1000). 100
         pledgeNest: 100
