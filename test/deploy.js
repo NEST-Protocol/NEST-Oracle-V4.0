@@ -15,32 +15,31 @@ describe('NestOpenMining', function() {
         
         console.log('ok');
         
-        return;
-        await nestBatchMining.open(
-            pusd.address, 
-            2000000000000000000000n, 
-            nest.address, 
-            [peth.address, nest.address], {
-                // 每个区块的标准出矿量
-                rewardPerBlock: 1000000000000000000n,
+        // await nestBatchMining.open(
+        //     pusd.address, 
+        //     2000000000000000000000n, 
+        //     nest.address, 
+        //     [peth.address, nest.address], {
+        //         // 每个区块的标准出矿量
+        //         rewardPerBlock: 1000000000000000000n,
 
-                // 矿币总量
-                //uint96 vault;
+        //         // 矿币总量
+        //         //uint96 vault;
 
-                // 管理地址
-                //address governance;
-                // 创世区块
-                //uint32 genesisBlock;
-                // Post fee(0.0001eth，DIMI_ETHER). 1000
-                postFeeUnit: 0,
-                // Single query fee (0.0001 ether, DIMI_ETHER). 100
-                singleFee: 20,
-                // 衰减系数，万分制。8000
-                reductionRate: 8000
-            }
-        );
+        //         // 管理地址
+        //         //address governance;
+        //         // 创世区块
+        //         //uint32 genesisBlock;
+        //         // Post fee(0.0001eth，DIMI_ETHER). 1000
+        //         postFeeUnit: 0,
+        //         // Single query fee (0.0001 ether, DIMI_ETHER). 100
+        //         singleFee: 20,
+        //         // 衰减系数，万分制。8000
+        //         reductionRate: 8000
+        //     }, { nonce: 9 }
+        // );
 
-        await nest.approve(nestBatchMining.address, 100000000000000000000000000n)
-        await nestBatchMining.increase(0, 100000000000000000000000000n);
+        //await nest.approve(nestBatchMining.address, 100000000000000000000000000n)
+        //await nestBatchMining.increase(0, 100000000000000000000000000n, { nonce: 11 });
     });
 });

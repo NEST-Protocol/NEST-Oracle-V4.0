@@ -3,6 +3,14 @@ require('@openzeppelin/hardhat-upgrades');
 require('hardhat-gas-reporter');
 
 const config = require('./.private.json');
+
+// process.env.HTTP_PROXY='http://127.0.0.1:8580/';
+// process.env.HTTPS_PROXY='http://127.0.0.1:8580/';
+process.env.HTTP_PROXY = undefined;
+process.env.HTTPS_PROXY = undefined;
+//console.log(process.env.HTTP_PROXY);
+//console.log(process.env.HTTPS_PROXY);
+
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task("accounts", "Prints the list of accounts", async () => {
@@ -21,7 +29,7 @@ task("accounts", "Prints the list of accounts", async () => {
  */
 module.exports = {
   solidity: {
-    version: '0.8.10',
+    version: '0.8.11',
     settings: {
       optimizer: {
         enabled: true,
@@ -79,7 +87,7 @@ module.exports = {
       timeout: 2000000000,
     },
     polygon_main: {
-      url: "https://rpc-mainnet.matic.network",
+      url: "https://matic-mainnet.chainstacklabs.com",
       chainId: 137,
       initialBaseFeePerGas: 50e9,
       gas: 6000000,
