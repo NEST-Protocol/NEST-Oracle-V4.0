@@ -9,15 +9,16 @@ import "./interfaces/INestOpenMining.sol";
 import "./interfaces/INestLedger.sol";
 import "./interfaces/INToken.sol";
 
-import "./NestBase.sol";
+import "./custom/ChainConfig.sol";
+import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev This contract implemented the mining logic of nest
-contract NestOpenMining is NestBase, INestOpenMining {
+contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
 
     /// @dev To support open-zeppelin/upgrades
-    /// @param nestGovernanceAddress INestGovernance implementation contract address
-    function initialize(address nestGovernanceAddress) public override {
-        super.initialize(nestGovernanceAddress);
+    /// @param governance INestGovernance implementation contract address
+    function initialize(address governance) public override {
+        super.initialize(governance);
         // Placeholder in _accounts, the index of a real account must greater than 0
         _accounts.push();
     }
@@ -155,30 +156,6 @@ contract NestOpenMining is NestBase, INestOpenMining {
 
     // Unit of post fee. 0.0001 ether
     uint constant DIMI_ETHER = 0.0001 ether;
-
-    // Ethereum average block time interval, 14 seconds
-    uint constant ETHEREUM_BLOCK_TIMESPAN = 3;
-
-    // Nest ore drawing attenuation interval. 2400000 blocks, about one year
-    uint constant NEST_REDUCTION_SPAN = 10000000;
-    // The decay limit of nest ore drawing becomes stable after exceeding this interval. 
-    // 24 million blocks, about 10 years
-    uint constant NEST_REDUCTION_LIMIT = 100000000; //NEST_REDUCTION_SPAN * 10;
-    // Attenuation gradient array, each attenuation step value occupies 16 bits. The attenuation value is an integer
-    uint constant NEST_REDUCTION_STEPS = 0x280035004300530068008300A300CC010001400190;
-        // 0
-        // | (uint(400 / uint(1)) << (16 * 0))
-        // | (uint(400 * 8 / uint(10)) << (16 * 1))
-        // | (uint(400 * 8 * 8 / uint(10 * 10)) << (16 * 2))
-        // | (uint(400 * 8 * 8 * 8 / uint(10 * 10 * 10)) << (16 * 3))
-        // | (uint(400 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10)) << (16 * 4))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10)) << (16 * 5))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10)) << (16 * 6))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 7))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 8))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 9))
-        // //| (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 10));
-        // | (uint(40) << (16 * 10));
     
     /* ========== Governance ========== */
 
@@ -279,14 +256,15 @@ contract NestOpenMining is NestBase, INestOpenMining {
         }
     }
 
-    // /// @dev 向报价通道注入NToken矿币
-    // /// @param channelId 报价通道
-    // /// @param vault 注入矿币数量
-    // function increaseNToken(uint channelId, uint96 vault) external onlyGovernance {
-    //     PriceChannel storage channel = _channels[channelId];
-    //     INToken(channel.reward).increaseTotal(vault);
-    //     channel.vault += vault;
-    // }
+    // TODO: remove
+    /// @dev 向报价通道注入NToken矿币
+    /// @param channelId 报价通道
+    /// @param vault 注入矿币数量
+    function increaseNToken(uint channelId, uint96 vault) external onlyGovernance {
+        PriceChannel storage channel = _channels[channelId];
+        INToken(channel.reward).increaseTotal(vault);
+        channel.vault += vault;
+    }
 
     /// @dev 修改治理权限地址
     /// @param channelId 报价通道
@@ -885,7 +863,7 @@ contract NestOpenMining is NestBase, INestOpenMining {
                         tmp = (
                             uint(p0.sigmaSQ) * 9 + 
                             // It is inevitable that prev greater than p0.height
-                            ((tmp * tmp / ETHEREUM_BLOCK_TIMESPAN / (prev - uint(p0.height))) >> 48)
+                            ((tmp * tmp * 1000 / ETHEREUM_BLOCK_TIMESPAN / (prev - uint(p0.height))) >> 48)
                         ) / 10;
 
                         // The current implementation assumes that the volatility cannot exceed 1, and
