@@ -19,6 +19,7 @@ exports.deploy = async function() {
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestLedger = await ethers.getContractFactory('NestLedger');
     const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
+    const NestBatchMining = await ethers.getContractFactory('NestBatchPlatform2');
     const NestVote = await ethers.getContractFactory('NestVote');
 
     console.log('** 开始部署合约 deploy.proxy.js **');
@@ -32,9 +33,17 @@ exports.deploy = async function() {
     //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('usdt: ' + usdt.address);
 
+    const usdc = await TestERC20.deploy('USDC', 'USDC', 18);
+    //const usdc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    console.log('usdc: ' + usdc.address);
+
     const hbtc = await TestERC20.deploy('HBTC', 'HBTC', 18);
     //const hbtc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('hbtc: ' + hbtc.address);
+
+    const cofi = await TestERC20.deploy('CoFi', 'CoFi', 18);
+    //const cofi = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    console.log('cofi: ' + cofi.address);
 
     const nestGovernance = await upgrades.deployProxy(NestGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
     //const nestGovernance = await NestGovernance.attach('0x0000000000000000000000000000000000000000');
@@ -51,6 +60,10 @@ exports.deploy = async function() {
     const nestOpenMining = await upgrades.deployProxy(NestOpenMining, [nestGovernance.address], { initializer: 'initialize' });
     //const nestOpenMining = await NestOpenMining.attach('0x0000000000000000000000000000000000000000');
     console.log('nestOpenMining: ' + nestOpenMining.address);
+
+    const nestBatchMining = await upgrades.deployProxy(NestBatchMining, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestBatchMining = await NestBatchMining.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestBatchMining: ' + nestBatchMining.address);
 
     // const nestPriceFacade = await upgrades.deployProxy(NestPriceFacade, [nestGovernance.address], { initializer: 'initialize' });
     // //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
@@ -92,6 +105,10 @@ exports.deploy = async function() {
     //await nestMining.update(nestGovernance.address);
     console.log('4. nestOpenMining.update()');
     await nestOpenMining.update(nestGovernance.address);
+
+    console.log('5. nestBatchMining.update()');
+    await nestBatchMining.update(nestGovernance.address);
+
     //console.log('5. nestPriceFacade.update()');
     //await nestPriceFacade.update(nestGovernance.address);
     console.log('6. nestVote.update()');
@@ -136,6 +153,19 @@ exports.deploy = async function() {
         pledgeNest: 100
     });
 
+    console.log('11. nestBatchMining.setConfig()');
+    await nestBatchMining.setConfig({
+        // -- Public configuration
+        // The number of times the sheet assets have doubled. 4
+        maxBiteNestedLevel: 4,
+        
+        // Price effective block interval. 20
+        priceEffectSpan: 20,
+
+        // The amount of nest to pledge for each post (Unit: 1000). 100
+        pledgeNest: 100
+    });
+
     // console.log('11. nestOpenMining.open()');
     // await nestOpenMining.open(hbtc.address, 1000000000000000000n, usdt.address, nest.address);
 
@@ -144,12 +174,15 @@ exports.deploy = async function() {
     const contracts = {
         nest: nest,
         usdt: usdt,
+        usdc: usdc,
         hbtc: hbtc,
+        cofi: cofi,
 
         nestGovernance: nestGovernance,
         nestLedger: nestLedger,
         //nestMining: nestMining,
         nestOpenMining: nestOpenMining,
+        nestBatchMining: nestBatchMining,
         //nestPriceFacade: nestPriceFacade,
         nestVote: nestVote,
         // nTokenController: nTokenController,
