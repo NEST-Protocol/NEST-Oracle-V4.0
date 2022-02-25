@@ -9,6 +9,10 @@ import "./interfaces/INestLedger.sol";
 /// @dev Base contract of nest
 contract NestBase {
 
+    // Address of nest token contract
+    // address constant NEST_TOKEN_ADDRESS = 0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7;
+    address NEST_TOKEN_ADDRESS;
+
     /// @dev INestGovernance implementation contract address
     address public _governance;
 

@@ -19,7 +19,7 @@ exports.deploy = async function() {
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestLedger = await ethers.getContractFactory('NestLedger');
     const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
-    const NestBatchMining = await ethers.getContractFactory('NestBatchPlatform2');
+    const NestBatchMining = await ethers.getContractFactory('NestBatchPlatform2New');
     const NestVote = await ethers.getContractFactory('NestVote');
 
     console.log('** 开始部署合约 deploy.proxy.js **');

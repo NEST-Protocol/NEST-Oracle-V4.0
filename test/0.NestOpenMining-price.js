@@ -201,7 +201,7 @@ describe('NestOpenMining', function() {
                 //await np.latestPriceAndTriggeredPriceInfo(0, owner.address, { value: toBigInt(FEE) });
                 await np.lastPriceListAndTriggeredPriceInfo(0, 2, owner.address, { value: toBigInt(FEE) });
                 await np.lastPriceList(0, 2, owner.address, { value: toBigInt(FEE) });
-                await np.findPrice(0, 85, owner.address, { value: toBigInt(FEE) });
+                await np.findPrice(0, 88, owner.address, { value: toBigInt(FEE) });
             }
 
             console.log('没有等待');
