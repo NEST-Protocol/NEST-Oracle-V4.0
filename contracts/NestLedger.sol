@@ -42,20 +42,20 @@ contract NestLedger is NestBase, INestLedger {
     }
 
     /// @dev Add reward
-    /// @param channelId 报价通道
+    /// @param channelId Target channelId
     function addETHReward(uint channelId) external payable override {
         UINT storage balance = _ntokenLedger[channelId];
         balance.value += msg.value;
     }
 
     /// @dev The function returns eth rewards of specified ntoken
-    /// @param channelId 报价通道
+    /// @param channelId Target channelId
     function totalETHRewards(uint channelId) external view override returns (uint) {
         return _ntokenLedger[channelId].value;
     }
 
     /// @dev Pay
-    /// @param channelId 报价通道
+    /// @param channelId Target channelId
     /// @param tokenAddress Token address of receiving funds (0 means ETH)
     /// @param to Address to receive
     /// @param value Amount to receive

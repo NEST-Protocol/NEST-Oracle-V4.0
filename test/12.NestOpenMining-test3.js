@@ -67,31 +67,13 @@ describe('NestOpenMining', function() {
             nest.address,        
             usdt.address,
             {
-            // // 计价代币地址, 0表示eth
-            // token0: '0x0000000000000000000000000000000000000000',
-            // // 计价代币单位
-            // unit: 1000000000000000000n,
-    
-            // // 报价代币地址，0表示eth
-            // token1: usdt.address,
-            // 每个区块的标准出矿量
+            // Reward per block standard
             rewardPerBlock: 1000000000000000000n,
-    
-            // // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
-            // // 出矿代币地址
-            // reward: nest.address,
-            // // 矿币总量
-            // //uint96 vault;
-    
-            // 管理地址
-            //address governance;
-            // 创世区块
-            //uint32 genesisBlock;
-            // Post fee(0.0001eth，DIMI_ETHER). 1000
+            // Post fee(0.0001eth, DIMI_ETHER). 1000
             postFeeUnit: 1000,
             // Single query fee (0.0001 ether, DIMI_ETHER). 100
             singleFee: 100,
-            // 衰减系数，万分制。8000
+            // Reduction rate(10000 based). 8000
             reductionRate: 8000
         });
         await nestOpenMining.increase(0, 5000000000000000000000000000n);
@@ -216,7 +198,7 @@ describe('NestOpenMining', function() {
                     });
                 }
             } else {
-                console.log('2. 吃单链');
+                console.log('2. Bit chain');
                 await nestOpenMining.takeToken1(0, 1, 2, toBigInt(4200, 6), {
                     value: toBigInt(2 * 2 + 2)
                 });

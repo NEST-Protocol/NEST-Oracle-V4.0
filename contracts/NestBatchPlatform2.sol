@@ -9,15 +9,14 @@ import "./interfaces/INestBatchPrice2.sol";
 
 import "./NestBatchMining.sol";
 
-// 支持pairIndex数组，可以一次性查询多个价格
-/// @dev This contract implemented the mining logic of nest
+/// @dev This contract implemented the query logic of nest
 contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchPrice2 {
 
     /* ========== INestBatchPriceView ========== */
 
     /// @dev Get the latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param channelId Target channelId
+    /// @param pairIndex Target pairIndex
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function triggeredPrice(uint channelId, uint pairIndex) external view override noContract returns (uint blockNumber, uint price) {
@@ -25,8 +24,8 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
     }
 
     /// @dev Get the full information of latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param channelId Target channelId
+    /// @param pairIndex Target pairIndex
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     /// @return avgPrice Average price
@@ -43,8 +42,8 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
     }
 
     /// @dev Find the price at block number
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param channelId Target channelId
+    /// @param pairIndex Target pairIndex
     /// @param height Destination block number
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
@@ -56,29 +55,20 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
         return _findPrice(_channels[channelId].pairs[pairIndex], height);
     }
 
-    // /// @dev Get the latest effective price
-    // /// @param channelId 报价通道编号
-    // /// @param pairIndex 报价对编号
-    // /// @return blockNumber The block number of price
-    // /// @return price The token price. (1eth equivalent to (price) token)
-    // function latestPrice(uint channelId, uint pairIndex) external view override noContract returns (uint blockNumber, uint price) {
-    //     return _latestPrice(_channels[channelId].pairs[pairIndex]);
-    // }
-
     /// @dev Get the last (num) effective price
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param channelId Target channelId
+    /// @param pairIndex Target pairIndex
     /// @param count The number of prices that want to return
-    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return An array which length is num * 2, each two element expresses one price like blockNumber|price
     function lastPriceList(uint channelId, uint pairIndex, uint count) external view override noContract returns (uint[] memory) {
         return _lastPriceList(_channels[channelId].pairs[pairIndex], count);
     } 
 
     /// @dev Returns lastPriceList and triggered price info
-    /// @param channelId 报价通道编号
-    /// @param pairIndex 报价对编号
+    /// @param channelId Target channelId
+    /// @param pairIndex Target pairIndex
     /// @param count The number of prices that want to return
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     /// @return triggeredAvgPrice Average price
@@ -107,10 +97,10 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
     /* ========== INestBatchPrice ========== */
 
     /// @dev Get the latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param pairIndices 报价对编号
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices 价格数组, i * 2 为第i个价格所在区块, i * 2 + 1 为第i个价格
+    /// @param channelId Target channelId
+    /// @param pairIndices Array of pair indices
+    /// @param payback Address to receive refund
+    /// @return prices Price array, i * 2 is the block where the ith price is located, and i * 2 + 1 is the ith price
     function triggeredPrice(
         uint channelId,
         uint[] calldata pairIndices, 
@@ -127,10 +117,11 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
     }
 
     /// @dev Get the full information of latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param pairIndices 报价对编号
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices 价格数组, i * 4 为第i个价格所在区块, i * 4 + 1 为第i个价格, i * 4 + 2 为第i个平均价格, i * 4 + 3 为第i个波动率
+    /// @param channelId Target channelId
+    /// @param pairIndices Array of pair indices
+    /// @param payback Address to receive refund
+    /// @return prices Price array, i * 4 is the block where the ith price is located, i * 4 + 1 is the ith price,
+    /// i * 4 + 2 is the ith average price and i * 4 + 3 is the ith volatility
     function triggeredPriceInfo(
         uint channelId, 
         uint[] calldata pairIndices,
@@ -147,11 +138,11 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
     }
 
     /// @dev Find the price at block number
-    /// @param channelId 报价通道编号
-    /// @param pairIndices 报价对编号
+    /// @param channelId Target channelId
+    /// @param pairIndices Array of pair indices
     /// @param height Destination block number
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices 价格数组, i * 2 为第i个价格所在区块, i * 2 + 1 为第i个价格
+    /// @param payback Address to receive refund
+    /// @return prices Price array, i * 2 is the block where the ith price is located, and i * 2 + 1 is the ith price
     function findPrice(
         uint channelId,
         uint[] calldata pairIndices, 
@@ -168,32 +159,13 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
         }
     }
 
-    // /// @dev Get the latest effective price
-    // /// @param channelId 报价通道编号
-    // /// @param pairIndices 报价对编号
-    // /// @param payback 如果费用有多余的，则退回到此地址
-    // /// @return prices 价格数组, i * 2 为第i个价格所在区块, i * 2 + 1 为第i个价格
-    // function latestPrice(
-    //     uint channelId, 
-    //     uint[] calldata pairIndices, 
-    //     address payback
-    // ) external payable override returns (uint[] memory prices) {
-    //     PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
-
-    //     uint n = pairIndices.length << 1;
-    //     prices = new uint[](n);
-    //     while (n > 0) {
-    //         n -= 2;
-    //         (prices[n], prices[n + 1]) = _latestPrice(pairs[pairIndices[n >> 1]]);
-    //     }
-    // }
-
     /// @dev Get the last (num) effective price
-    /// @param channelId 报价通道编号
-    /// @param pairIndices 报价对编号
+    /// @param channelId Target channelId
+    /// @param pairIndices Array of pair indices
     /// @param count The number of prices that want to return
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices 结果数组，第 i * count * 2 到 (i + 1) * count * 2 - 1为第i组报价对的价格结果
+    /// @param payback Address to receive refund
+    /// @return prices Result array, i * count * 2 to (i + 1) * count * 2 - 1 are 
+    /// the price results of group i quotation pairs
     function lastPriceList(
         uint channelId, 
         uint[] calldata pairIndices, 
@@ -215,12 +187,12 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
     }
 
     /// @dev Returns lastPriceList and triggered price info
-    /// @param channelId 报价通道编号
-    /// @param pairIndices 报价对编号
+    /// @param channelId Target channelId
+    /// @param pairIndices Array of pair indices
     /// @param count The number of prices that want to return
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices 结果数组，第 i * (count * 2 + 4)到 (i + 1) * (count * 2 + 4)- 1为第i组报价对的价格结果
-    ///         其中前count * 2个为最新价格，后4个依次为：触发价格区块号，触发价格，平均价格，波动率
+    /// @param payback Address to receive refund
+    /// @return prices result of group i quotation pair. Among them, the first two count * are the latest prices, 
+    /// and the last four are: trigger price block number, trigger price, average price and volatility
     function lastPriceListAndTriggeredPriceInfo(
         uint channelId, 
         uint[] calldata pairIndices,

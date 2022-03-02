@@ -65,13 +65,13 @@ describe('NestOpenMining', function() {
             1000000000000000000n,
             nest.address,
             usdt.address, {
-            // 每个区块的标准出矿量
+            // Reward per block standard
             rewardPerBlock: 1000000000000000000n,
     
             postFeeUnit: 1000,
             // Single query fee (0.0001 ether, DIMI_ETHER). 100
             singleFee: 100,
-            // 衰减系数，万分制。8000
+            // Reduction rate(10000 based). 8000
             reductionRate: 8000
         });
 

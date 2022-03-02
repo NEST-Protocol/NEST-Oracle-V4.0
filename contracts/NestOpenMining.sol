@@ -95,30 +95,30 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         // High 128-bits represent the current counter of no fee sheets (including settled)
         uint feeInfo;
 
-        // 计价代币地址, 0表示eth
+        // Address of token0, use to mensuration, 0 means eth
         address token0;
-        // 计价代币单位
+        // Unit of token0
         uint96 unit;
 
-        // 报价代币地址，0表示eth
+        // Address of token1, 0 means eth
         address token1;
-        // 每个区块的标准出矿量
+        // Reward per block standard
         uint96 rewardPerBlock;
 
-        // 出矿代币地址
+        // Reward token address
         address reward;
-        // 矿币总量
+        // Reward total
         uint96 vault;
 
-        // 管理地址
+        // Governance address of this channel
         address governance;
-        // 创世区块
+        // Genesis block of this channel
         uint32 genesisBlock;
-        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        // Post fee(0.0001eth, DIMI_ETHER). 1000
         uint16 postFeeUnit;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         uint16 singleFee;
-        // 衰减系数，万分制。8000
+        // Reduction rate(10000 based). 8000
         uint16 reductionRate;
     }
 
@@ -148,10 +148,10 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     // Mapping from address to index of account. address=>accountIndex
     mapping(address=>uint) _accountMapping;
 
-    // 报价通道映射，通过此映射避免重复添加报价通道
+    // Channel to index mapping
     //mapping(uint=>uint) _channelMapping;
 
-    // 报价通道
+    // Price channels
     PriceChannel[] _channels;
 
     // Unit of post fee. 0.0001 ether
@@ -171,12 +171,12 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         return _config;
     }
 
-    /// @dev 开通报价通道
-    /// @param token0 计价代币地址, 0表示eth
-    /// @param unit 计价代币单位
-    /// @param reward 出矿代币地址
-    /// @param token1 报价代币地址，0表示eth
-    /// @param config 报价通道配置
+    /// @dev Open price channel
+    /// @param token0 Address of token0, use to mensuration, 0 means eth
+    /// @param unit Unit of token0
+    /// @param reward Reward token address
+    /// @param token1 Address of token1, 0 means eth
+    /// @param config Channel configuration
     function open(
         address token0, 
         uint96 unit, 
@@ -185,10 +185,6 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         ChannelConfig calldata config
     ) external override {
 
-        // address token0 = config.token0;
-        // address token1 = config.token1;
-        // address reward = config.reward;
-
         require(token0 != token1, "NOM:token0 can't equal token1");
         emit Open(_channels.length, token0, unit, token1, reward);
         PriceChannel storage channel = _channels.push();
@@ -196,40 +192,42 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         channel.unit = unit;
         channel.token1 = token1;
         channel.reward = reward;
-        // 管理地址
+        // Address of opener
         channel.governance = msg.sender;
-        // 创世区块
+        // Genesis block of this channel
         channel.genesisBlock = uint32(block.number);
 
         _modify(channel, config);
     }
 
-    /// @dev 修改通道参数
-    /// @param channelId 报价通道
-    /// @param config 报价通道配置
+    /// @dev Modify channel configuration
+    /// @param channelId Target channelId
+    /// @param config Channel configuration
     function modify(uint channelId, ChannelConfig calldata config) external override {
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:not governance");
         _modify(channel, config);
     }
 
-    // 修改配置
+    /// @dev Modify channel configuration
+    /// @param channel Target channel
+    /// @param config Channel configuration
     function _modify(PriceChannel storage channel, ChannelConfig calldata config) private {
-        // 单位区块出矿币数量
+        // Reward per block standard
         channel.rewardPerBlock = config.rewardPerBlock;
 
-        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        // Post fee(0.0001eth, DIMI_ETHER). 1000
         channel.postFeeUnit = config.postFeeUnit;
 
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         channel.singleFee = config.singleFee;
-        // 衰减系数，万分制。8000
+        // Reduction rate(10000 based). 8000
         channel.reductionRate = config.reductionRate;
     }
 
-    /// @dev 向报价通道注入矿币
-    /// @param channelId 报价通道
-    /// @param vault 注入矿币数量
+    /// @dev Increase vault to channel
+    /// @param channelId Target channelId
+    /// @param vault Total to increase
     function increase(uint channelId, uint96 vault) external payable override {
         PriceChannel storage channel = _channels[channelId];
         address reward = channel.reward;
@@ -241,9 +239,9 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         channel.vault += vault;
     }
 
-    /// @dev 从报价通道取出矿币
-    /// @param channelId 报价通道
-    /// @param vault 取出矿币数量
+    /// @dev Decrease vault from channel
+    /// @param channelId Target channelId
+    /// @param vault Total to decrease
     function decrease(uint channelId, uint96 vault) external override {
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:not governance");
@@ -257,27 +255,27 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     }
 
     // TODO: remove
-    /// @dev 向报价通道注入NToken矿币
-    /// @param channelId 报价通道
-    /// @param vault 注入矿币数量
+    /// @dev Increase NToken
+    /// @param channelId Target channelId
+    /// @param vault Total to decrease
     function increaseNToken(uint channelId, uint96 vault) external onlyGovernance {
         PriceChannel storage channel = _channels[channelId];
         INToken(channel.reward).increaseTotal(vault);
         channel.vault += vault;
     }
 
-    /// @dev 修改治理权限地址
-    /// @param channelId 报价通道
-    /// @param newGovernance 新治理权限地址
+    /// @dev Change opener
+    /// @param channelId Target channelId
+    /// @param newGovernance New opener address
     function changeGovernance(uint channelId, address newGovernance) external {
         PriceChannel storage channel = _channels[channelId];
         require(channel.governance == msg.sender, "NOM:not governance");
         channel.governance = newGovernance;
     }
 
-    /// @dev 获取报价通道信息
-    /// @param channelId 报价通道
-    /// @return 报价通道信息
+    /// @dev Get channel information
+    /// @param channelId Target channelId
+    /// @return Information of channel
     function getChannelInfo(uint channelId) external view override returns (PriceChannelView memory) {
         PriceChannel storage channel = _channels[channelId];
         return PriceChannelView (
@@ -290,44 +288,43 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
             // High 128-bits represent the current counter of no fee sheets (including settled)
             channel.feeInfo,
 
-            // 计价代币地址, 0表示eth
+            // Address of token0, use to mensuration, 0 means eth
             channel.token0,
-            // 计价代币单位
+            // Unit of token0
             channel.unit,
 
-            // 报价代币地址，0表示eth
+            // Address of token1, 0 means eth
             channel.token1,
-            // 每个区块的标准出矿量
+            // Reward per block standard
             channel.rewardPerBlock,
 
-            // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
-            // 出矿代币地址
+            // Reward token address
             channel.reward,
-            // 矿币总量
+            // Reward total
             channel.vault,
 
-            // 管理地址
+            // Address of opener
             channel.governance,
-            // 创世区块
+            // Genesis block of this channel
             channel.genesisBlock,
-            // Post fee(0.0001eth，DIMI_ETHER). 1000
+            // Post fee(0.0001eth, DIMI_ETHER). 1000
             channel.postFeeUnit,
             // Single query fee (0.0001 ether, DIMI_ETHER). 100
             channel.singleFee,
-            // 衰减系数，万分制。8000
+            // Reduction rate(10000 based). 8000
             channel.reductionRate
         );
     }
 
     /* ========== Mining ========== */
 
-    /// @dev 报价
-    /// @param channelId 报价通道id
-    /// @param scale 报价规模（token0，单位unit）
-    /// @param equivalent 与单位token0等价的token1数量
+    /// @dev Post price
+    /// @param channelId Target channelId
+    /// @param scale Scale of this post. (Which times of unit)
+    /// @param equivalent Amount of token1 which equivalent to token0
     function post(uint channelId, uint scale, uint equivalent) external payable override {
 
-        // 0. 加载配置
+        // 0. Load config
         Config memory config = _config;
 
         // 1. Check arguments
@@ -350,15 +347,15 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
 
         uint fee = msg.value;
-        // 冻结token0
+        // Freeze token0
         fee = _freeze(balances, channel.token0, uint(channel.unit) * scale, fee);
-        // 冻结token1
+        // Freeze token1
         fee = _freeze(balances, channel.token1, scale * equivalent, fee);
-        // 冻结nest
+        // Freeze nest
         fee = _freeze(balances, NEST_TOKEN_ADDRESS, uint(config.pledgeNest) * 1000 ether, fee);
     
         // 5. Deposit fee
-        // 只有配置了报价佣金时才检查fee
+        // Only postFeeUnit > 0 need fee
         uint postFeeUnit = uint(channel.postFeeUnit);
         if (postFeeUnit > 0) {
             require(fee >= postFeeUnit * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
@@ -379,7 +376,7 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
 
     /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
     /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
-    /// @param channelId 报价通道编号
+    /// @param channelId Target price channelId
     /// @param index The position of the sheet in priceSheetList[token]
     /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
     /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
@@ -423,20 +420,20 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         // Freeze nest and token
         uint accountIndex = _addressIndex(msg.sender);
         {
-            // 冻结资产：token0, token1, nest
+            // Freeze assets: token0, token1, nest
             mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
             uint fee = msg.value;
 
-            // 冻结token0
+            // Freeze token0
             fee = _freeze(balances, channel.token0, (needEthNum - takeNum) * uint(channel.unit), fee);
-            // 冻结token1
+            // Freeze token1
             fee = _freeze(
                 balances, 
                 channel.token1, 
                 needEthNum * newEquivalent + _decodeFloat(sheet.priceFloat) * takeNum, 
                 fee
             );
-            // 冻结nest
+            // Freeze nest
             fee = _freeze(balances, NEST_TOKEN_ADDRESS, needNest1k * 1000 ether, fee);
             require(fee == 0, "NOM:!fee");
         }
@@ -497,13 +494,13 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         // Freeze nest and token
         uint accountIndex = _addressIndex(msg.sender);
         {
-            // 冻结资产：token0, token1, nest
+            // Freeze assets: token0, token1, nest
             mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
 
             uint fee = msg.value;
-            // 冻结token0
+            // Freeze token0
             fee = _freeze(balances, channel.token0, (needEthNum + takeNum) * uint(channel.unit), fee);
-            // 冻结token1
+            // Freeze token1
             uint backTokenValue = _decodeFloat(sheet.priceFloat) * takeNum;
             if (needEthNum * newEquivalent > backTokenValue) {
                 fee = _freeze(balances, channel.token1, needEthNum * newEquivalent - backTokenValue, fee);
@@ -525,7 +522,7 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     }
 
     /// @dev List sheets by page
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
@@ -570,7 +567,7 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
 
     /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
     /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param indices A list of indices of sheets w.r.t. `token`
     function close(uint channelId, uint[] memory indices) external override {
         
@@ -584,11 +581,11 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
 
         mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
 
-        // 解冻token0
+        // Unfreeze token0
         _unfreeze(balances, channel.token0, uint(total.ethNum) * uint(channel.unit), accountIndex);
-        // 解冻token1
+        // Unfreeze token1
         _unfreeze(balances, channel.token1, uint(total.tokenValue), accountIndex);
-        // 解冻nest
+        // Unfreeze nest
         _unfreeze(balances, NEST_TOKEN_ADDRESS, uint(total.nestValue), accountIndex);
 
         uint vault = uint(channel.vault);
@@ -596,15 +593,16 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         if (ntokenValue > vault) {
             ntokenValue = vault;
         }
-        // 记录每个通道矿币的数量，防止开通者不打币，直接用资金池内的资金
+        // Record the vault for each channel to prevent the opener use the funds in this contract without increase
         channel.vault = uint96(vault - ntokenValue);
-        // 奖励矿币
+
+        // Record reward
         _unfreeze(balances, channel.reward, ntokenValue, accountIndex);
     }
 
     /// @dev The function updates the statistics of price sheets
     ///     It calculates from priceInfo to the newest that is effective.
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     function stat(uint channelId) external override {
         PriceChannel storage channel = _channels[channelId];
         _stat(_config, channel, channel.sheets);
@@ -635,7 +633,7 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     }
 
     /// @dev Estimated mining amount
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @return Estimated mining amount
     function estimate(uint channelId) external view override returns (uint) {
 
@@ -660,7 +658,7 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     }
 
     /// @dev Query the quantity of the target quotation
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param index The index of the sheet
     /// @return minedBlocks Mined block period from previous block
     /// @return totalShares Total shares of sheets in the block
@@ -684,13 +682,13 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     }
 
     /// @dev The function returns eth rewards of specified ntoken
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     function totalETHRewards(uint channelId) external view override returns (uint) {
         return _channels[channelId].feeInfo;
     }
 
     /// @dev Pay
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param to Address to receive
     /// @param value Amount to receive
     function pay(uint channelId, address to, uint value) external override {
@@ -702,8 +700,8 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         payable(to).transfer(value);
     }
 
-    /// @dev 向DAO捐赠
-    /// @param channelId 报价通道
+    /// @dev Donate to dao
+    /// @param channelId Target channelId
     /// @param value Amount to receive
     function donate(uint channelId, uint value) external override {
 
@@ -939,8 +937,9 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
 
                 // Currently, mined represents the number of blocks has mined
                 (uint mined, uint totalShares) = _calcMinedBlocks(sheets, index, sheet);
-                // 当开通者指定的rewardPerBlock非常大时，计算出矿可能会被截断，导致实际能够得到的出矿大大减少
-                // 这种情况是不合理的，需要由开通者负责
+                // When rewardPerBlock is very large, this calculated may be truncated, 
+                // resulting in a significant reduction in the actual reward,
+                // This situation is unreasonable and needs to be borne by the opener.
                 value.ntokenValue = uint96(
                     mined
                     * tmp
@@ -1050,7 +1049,7 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     /// @param balances Balances ledger
     /// @param tokenAddress Destination token address
     /// @param tokenValue token amount
-    /// @param value 剩余的eth数量
+    /// @param value The remain value
     function _freeze(
         mapping(address=>UINT) storage balances, 
         address tokenAddress, 
@@ -1158,10 +1157,10 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 
-    /* ========== 价格查询 ========== */
+    /* ========== Price Query ========== */
     
     /// @dev Get the latest trigger price
-    /// @param channel 报价通道
+    /// @param channel Target channel
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function _triggeredPrice(PriceChannel storage channel) internal view returns (uint blockNumber, uint price) {
@@ -1176,7 +1175,7 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     }
 
     /// @dev Get the full information of latest trigger price
-    /// @param channel 报价通道
+    /// @param channel Target channel
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     /// @return avgPrice Average price
@@ -1205,7 +1204,7 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     }
 
     /// @dev Find the price at block number
-    /// @param channel 报价通道
+    /// @param channel Target channel
     /// @param height Destination block number
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
@@ -1294,7 +1293,7 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     }
 
     /// @dev Get the latest effective price
-    /// @param channel 报价通道
+    /// @param channel Target channel
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function _latestPrice(PriceChannel storage channel) internal view returns (uint blockNumber, uint price) {
@@ -1333,9 +1332,9 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     }
 
     /// @dev Get the last (num) effective price
-    /// @param channel 报价通道
+    /// @param channel Target channel
     /// @param count The number of prices that want to return
-    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return An array which length is num * 2, each two element expresses one price like blockNumber|price
     function _lastPriceList(PriceChannel storage channel, uint count) internal view returns (uint[] memory) {
 
         PriceSheet[] storage sheets = channel.sheets;
@@ -1373,38 +1372,10 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         return array;
     } 
 
-    // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
-    // /// @param channel 报价通道
-    // /// @return latestPriceBlockNumber The block number of latest price
-    // /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
-    // /// @return triggeredPriceBlockNumber The block number of triggered price
-    // /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    // /// @return triggeredAvgPrice Average price
-    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    // function _latestPriceAndTriggeredPriceInfo(PriceChannel storage channel) internal view 
-    // returns (
-    //     uint latestPriceBlockNumber,
-    //     uint latestPriceValue,
-    //     uint triggeredPriceBlockNumber,
-    //     uint triggeredPriceValue,
-    //     uint triggeredAvgPrice,
-    //     uint triggeredSigmaSQ
-    // ) {
-    //     (latestPriceBlockNumber, latestPriceValue) = _latestPrice(channel);
-    //     (
-    //         triggeredPriceBlockNumber, 
-    //         triggeredPriceValue, 
-    //         triggeredAvgPrice, 
-    //         triggeredSigmaSQ
-    //     ) = _triggeredPriceInfo(channel);
-    // }
-
     /// @dev Returns lastPriceList and triggered price info
-    /// @param channel 报价通道
+    /// @param channel Target channel
     /// @param count The number of prices that want to return
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     /// @return triggeredAvgPrice Average price

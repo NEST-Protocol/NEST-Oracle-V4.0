@@ -5,7 +5,7 @@ pragma solidity ^0.8.6;
 /// @dev Base contract of nest
 contract ChainConfig {
 
-    // ******** 以太坊 ******** //
+    // ******** Ethereum ******** //
 
     // // Ethereum average block time interval, 14000 milliseconds
     // uint constant ETHEREUM_BLOCK_TIMESPAN = 14000;

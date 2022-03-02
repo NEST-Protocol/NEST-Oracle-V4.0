@@ -35,7 +35,7 @@ contract NToken is NestBase, INToken {
     // token information: decimals
     uint8 constant public decimals = 18;
 
-    // token state，high 128 bits represent _totalSupply, low 128 bits represent latestMintAtHeight
+    // token state, high 128 bits represent _totalSupply, low 128 bits represent latestMintAtHeight
     uint256 _state;
     
     // Balances ledger

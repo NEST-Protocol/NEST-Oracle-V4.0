@@ -87,30 +87,30 @@ abstract contract NestOpenMiningStorage is ChainConfig, NestFrequentlyUsed, INes
         // High 128-bits represent the current counter of no fee sheets (including settled)
         uint feeInfo;
 
-        // 计价代币地址, 0表示eth
+        // Address of token0, use to mensuration, 0 means eth
         address token0;
-        // 计价代币单位
+        // Unit of token0
         uint96 unit;
 
-        // 报价代币地址，0表示eth
+        // Address of token1, price target, 0 means eth
         address token1;
-        // 每个区块的标准出矿量
+        // Reward per block standard
         uint96 rewardPerBlock;
 
-        // 出矿代币地址
+        // Reward token address
         address reward;
-        // 矿币总量
+        // Reward total
         uint96 vault;
 
-        // 管理地址
+        // Governance of this channel
         address governance;
-        // 创世区块
+        // Genesis block of this channel
         uint32 genesisBlock;
-        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        // Post fee(0.0001eth, DIMI_ETHER). 1000
         uint16 postFeeUnit;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         uint16 singleFee;
-        // 衰减系数，万分制。8000
+        // Reduction rate(10000 based). 8000
         uint16 reductionRate;
     }
 
@@ -140,10 +140,10 @@ abstract contract NestOpenMiningStorage is ChainConfig, NestFrequentlyUsed, INes
     // Mapping from address to index of account. address=>accountIndex
     mapping(address=>uint) _accountMapping;
 
-    // 报价通道映射，通过此映射避免重复添加报价通道
+    // Channel to index mapping
     //mapping(uint=>uint) _channelMapping;
 
-    // 报价通道
+    // Old price channels
     PriceChannelOld[] _oldChannels;
 
     // Unit of post fee. 0.0001 ether

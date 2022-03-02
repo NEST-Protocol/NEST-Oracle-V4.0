@@ -5,19 +5,19 @@ pragma solidity ^0.8.6;
 /// @dev This interface defines the mining methods for nest
 interface INestOpenMining {
     
-    /// @dev 开通报价通道
-    /// @param channelId 报价通道编号
-    /// @param token0 计价代币地址。0表示eth
-    /// @param unit token0的单位
-    /// @param token1 报价代币地址。0表示eth
-    /// @param reward 挖矿代币地址。0表示不挖矿
+    /// @dev PriceChannel open event
+    /// @param channelId Target channelId
+    /// @param token0 Address of token0, use to mensuration, 0 means eth
+    /// @param unit Unit of token0
+    /// @param token1 Address of token1, 0 means eth
+    /// @param reward Reward token address
     event Open(uint channelId, address token0, uint unit, address token1, address reward);
 
     /// @dev Post event
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param miner Address of miner
     /// @param index Index of the price sheet
-    /// @param scale 报价规模
+    /// @param scale Scale of this post. (Which times of unit)
     event Post(uint channelId, address miner, uint index, uint scale, uint price);
 
     /* ========== Structures ========== */
@@ -69,33 +69,19 @@ interface INestOpenMining {
         uint152 price;
     }
 
-    // 报价通道配置
+    // PriceChannel configuration
     struct ChannelConfig {
-        // // 计价代币地址, 0表示eth
-        // address token0;
-        // // 计价代币单位
-        // uint96 unit;
 
-        // // 报价代币地址，0表示eth
-        // address token1;
-        // 每个区块的标准出矿量
+        // Reward per block standard
         uint96 rewardPerBlock;
 
-        // // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
-        // // 出矿代币地址
-        // address reward;
-        // 矿币总量
-        //uint96 vault;
-
-        // 管理地址
-        //address governance;
-        // 创世区块
-        //uint32 genesisBlock;
-        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        // Post fee(0.0001eth, DIMI_ETHER). 1000
         uint16 postFeeUnit;
+
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         uint16 singleFee;
-        // 衰减系数，万分制。8000
+
+        // Reduction rate(10000 based). 8000
         uint16 reductionRate;
     }
 
@@ -111,31 +97,30 @@ interface INestOpenMining {
         // High 128-bits represent the current counter of no fee sheets (including settled)
         uint feeInfo;
 
-        // 计价代币地址, 0表示eth
+        // Address of token0, use to mensuration, 0 means eth
         address token0;
-        // 计价代币单位
+        // Unit of token0
         uint96 unit;
 
-        // 报价代币地址，0表示eth
+        // Address of token1, 0 means eth
         address token1;
-        // 每个区块的标准出矿量
+        // Reward per block standard
         uint96 rewardPerBlock;
 
-        // 矿币地址如果和token0或者token1是一种币，可能导致挖矿资产被当成矿币挖走
-        // 出矿代币地址
+        // Reward token address
         address reward;
-        // 矿币总量
+        // Reward total
         uint96 vault;
 
-        // 管理地址
+        // Governance address of this channel
         address governance;
-        // 创世区块
+        // Genesis block of this channel
         uint32 genesisBlock;
-        // Post fee(0.0001eth，DIMI_ETHER). 1000
+        // Post fee(0.0001eth, DIMI_ETHER). 1000
         uint16 postFeeUnit;
         // Single query fee (0.0001 ether, DIMI_ETHER). 100
         uint16 singleFee;
-        // 衰减系数，万分制。8000
+        // Reduction rate(10000 based). 8000
         uint16 reductionRate;
     }
 
@@ -149,19 +134,12 @@ interface INestOpenMining {
     /// @return Configuration object
     function getConfig() external view returns (Config memory);
     
-    // /// @dev 开通报价通道
-    // /// @param token0 计价代币地址。0表示eth
-    // /// @param unit token0的单位
-    // /// @param token1 报价代币地址。0表示eth
-    // /// @param reward 挖矿代币地址。0表示挖eth
-    // function open(address token0, uint unit, address token1, address reward) external;
-
-    /// @dev 开通报价通道
-    /// @param token0 计价代币地址, 0表示eth
-    /// @param unit 计价代币单位
-    /// @param reward 出矿代币地址
-    /// @param token1 报价代币地址，0表示eth
-    /// @param config 报价通道配置
+    /// @dev Open price channel
+    /// @param token0 Address of token0, use to mensuration, 0 means eth
+    /// @param unit Unit of token0
+    /// @param reward Reward token address
+    /// @param token1 Address of token1, 0 means eth
+    /// @param config Channel configuration
     function open(
         address token0, 
         uint96 unit, 
@@ -170,35 +148,35 @@ interface INestOpenMining {
         ChannelConfig calldata config
     ) external;
 
-    /// @dev 修改通道参数
-    /// @param channelId 报价通道
-    /// @param config 报价通道配置
+    /// @dev Modify channel configuration
+    /// @param channelId Target channelId
+    /// @param config Channel configuration
     function modify(uint channelId, ChannelConfig calldata config) external;
 
-    /// @dev 向报价通道注入矿币
-    /// @param channelId 报价通道
-    /// @param vault 注入矿币数量
+    /// @dev Increase vault to channel
+    /// @param channelId Target channelId
+    /// @param vault Total to increase
     function increase(uint channelId, uint96 vault) external payable;
 
-    /// @dev 从报价通道取出矿币
-    /// @param channelId 报价通道
-    /// @param vault 注入矿币数量
+    /// @dev Decrease vault from channel
+    /// @param channelId Target channelId
+    /// @param vault Total to decrease
     function decrease(uint channelId, uint96 vault) external;
 
-    /// @dev 获取报价通道信息
-    /// @param channelId 报价通道
-    /// @return 报价通道信息
+    /// @dev Get channel information
+    /// @param channelId Target channelId
+    /// @return Information of channel
     function getChannelInfo(uint channelId) external view returns (PriceChannelView memory);
 
-    /// @dev 报价
-    /// @param channelId 报价通道id
-    /// @param scale 报价规模（token0，单位unit）
-    /// @param equivalent 与单位token0等价的token1数量
+    /// @dev Post price
+    /// @param channelId Target channelId
+    /// @param scale Scale of this post. (Which times of unit)
+    /// @param equivalent Amount of token1 which equivalent to token0
     function post(uint channelId, uint scale, uint equivalent) external payable;
 
     /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
     /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
-    /// @param channelId 报价通道编号
+    /// @param channelId Target price channelId
     /// @param index The position of the sheet in priceSheetList[token]
     /// @param takeNum The amount of biting (in the unit of ETH), realAmount = takeNum * newTokenAmountPerEth
     /// @param newEquivalent The new price of token (1 ETH : some TOKEN), here some means newTokenAmountPerEth
@@ -213,7 +191,7 @@ interface INestOpenMining {
     function takeToken1(uint channelId, uint index, uint takeNum, uint newEquivalent) external payable;
 
     /// @dev List sheets by page
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
@@ -222,13 +200,13 @@ interface INestOpenMining {
 
     /// @notice Close a batch of price sheets passed VERIFICATION-PHASE
     /// @dev Empty sheets but in VERIFICATION-PHASE aren't allowed
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param indices A list of indices of sheets w.r.t. `token`
     function close(uint channelId, uint[] memory indices) external;
 
     /// @dev The function updates the statistics of price sheets
     ///     It calculates from priceInfo to the newest that is effective.
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     function stat(uint channelId) external;
 
     /// @dev View the number of assets specified by the user
@@ -243,12 +221,12 @@ interface INestOpenMining {
     function withdraw(address tokenAddress, uint value) external;
 
     /// @dev Estimated mining amount
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @return Estimated mining amount
     function estimate(uint channelId) external view returns (uint);
 
     /// @dev Query the quantity of the target quotation
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param index The index of the sheet
     /// @return minedBlocks Mined block period from previous block
     /// @return totalShares Total shares of sheets in the block
@@ -258,17 +236,17 @@ interface INestOpenMining {
     ) external view returns (uint minedBlocks, uint totalShares);
 
     /// @dev The function returns eth rewards of specified ntoken
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     function totalETHRewards(uint channelId) external view returns (uint);
 
     /// @dev Pay
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param to Address to receive
     /// @param value Amount to receive
     function pay(uint channelId, address to, uint value) external;
 
-    /// @dev 向DAO捐赠
-    /// @param channelId 报价通道
+    /// @dev Donate to dao
+    /// @param channelId Target channelId
     /// @param value Amount to receive
     function donate(uint channelId, uint value) external;
 }
