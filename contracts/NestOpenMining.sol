@@ -148,9 +148,6 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
     // Mapping from address to index of account. address=>accountIndex
     mapping(address=>uint) _accountMapping;
 
-    // Channel to index mapping
-    //mapping(uint=>uint) _channelMapping;
-
     // Price channels
     PriceChannel[] _channels;
 
@@ -625,8 +622,6 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         // the problem of taking the locked nest as the ore drawing will appear
         // As it will take a long time for nest to finish mining, this problem will not be considered for the time being
         UINT storage balance = _accounts[_accountMapping[msg.sender]].balances[tokenAddress];
-        //uint balanceValue = balance.value;
-        //require(balanceValue >= value, "NM:!balance");
         balance.value -= value;
 
         TransferHelper.safeTransfer(tokenAddress, msg.sender, value);
@@ -666,17 +661,6 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         uint channelId,
         uint index
     ) external view override returns (uint minedBlocks, uint totalShares) {
-
-        // PriceSheet[] storage sheets = _channels[channelId].sheets;
-        // PriceSheet memory sheet = sheets[index];
-
-        // // The bite sheet or ntoken sheet doesn't mining
-        // if (uint(sheet.shares) == 0) {
-        //     return (0, 0);
-        // }
-
-        // return _calcMinedBlocks(sheets, index, sheet);
-
         PriceSheet[] storage sheets = _channels[channelId].sheets;
         return _calcMinedBlocks(sheets, index, sheets[index]);
     }
@@ -1027,7 +1011,6 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
             totalShares += uint(sheets[i].shares);
         }
 
-        //i = index;
         // Find sheets in the same block forward
         uint prev = height;
         while (index > 0 && uint(prev = sheets[--index].height) == height) {
@@ -1117,15 +1100,6 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
 
         return index;
     }
-
-    // // Calculation of attenuation gradient
-    // function _reduction(uint delta) private pure returns (uint) {
-
-    //     if (delta < NEST_REDUCTION_LIMIT) {
-    //         return (NEST_REDUCTION_STEPS >> ((delta / NEST_REDUCTION_SPAN) << 4)) & 0xFFFF;
-    //     }
-    //     return (NEST_REDUCTION_STEPS >> 160) & 0xFFFF;
-    // }
 
     function _reduction(uint delta, uint reductionRate) private pure returns (uint) {
         if (delta < NEST_REDUCTION_LIMIT) {
@@ -1342,7 +1316,6 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         uint[] memory array = new uint[](count <<= 1);
 
         uint priceEffectSpan = uint(_config.priceEffectSpan);
-        //uint h = block.number - priceEffectSpan;
         uint index = sheets.length;
         uint totalEthNum = 0;
         uint totalTokenValue = 0;

@@ -9,11 +9,6 @@ import "./NestBase.sol";
 /// @dev Nest ledger contract
 contract NestLedger is NestBase, INestLedger {
 
-    // /// @param nestTokenAddress Address of nest token contract
-    // constructor(address nestTokenAddress) {
-    //     NEST_TOKEN_ADDRESS = nestTokenAddress;
-    // }
-
     /// @dev Structure is used to represent a storage location. 
     /// Storage variable can be used to avoid indexing from mapping many times
     struct UINT {

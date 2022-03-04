@@ -15,8 +15,6 @@ import "./custom/NestFrequentlyUsed.sol";
 /// @dev nest voting contract, implemented the voting logic
 contract NestVote is ChainConfig, NestFrequentlyUsed, INestVote {
     
-    // constructor() { }
-
     /// @dev Structure is used to represent a storage location. Storage variable can be used to avoid indexing 
     /// from mapping many times
     struct UINT {

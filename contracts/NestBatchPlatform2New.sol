@@ -228,9 +228,10 @@ contract NestBatchPlatform2New is NestBatchMiningNew, INestBatchPriceView, INest
         channel = _channels[channelId];
         uint fee = uint(channel.singleFee) * DIMI_ETHER;
         if (msg.value > fee) {
-            payable(payback).transfer(msg.value - fee);
-            // TODO: BSC上采用的是老的gas计算策略，直接转账可能导致代理合约gas超出，要改用下面的方式转账
-            //TransferHelper.safeTransferETH(payback, msg.value - fee);
+            //payable(payback).transfer(msg.value - fee);
+            // BSC adopts the old gas calculation strategy. Direct transfer may lead to the excess of gas 
+            // in the agency contract. The following methods should be used for transfer
+            TransferHelper.safeTransferETH(payback, msg.value - fee);
         } else {
             require(msg.value == fee, "NOP:!fee");
         }

@@ -140,9 +140,6 @@ abstract contract NestOpenMiningStorage is ChainConfig, NestFrequentlyUsed, INes
     // Mapping from address to index of account. address=>accountIndex
     mapping(address=>uint) _accountMapping;
 
-    // Channel to index mapping
-    //mapping(uint=>uint) _channelMapping;
-
     // Old price channels
     PriceChannelOld[] _oldChannels;
 

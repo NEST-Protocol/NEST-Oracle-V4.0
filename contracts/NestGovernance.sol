@@ -8,11 +8,6 @@ import "./NestMapping.sol";
 /// @dev Nest governance contract
 contract NestGovernance is NestMapping, INestGovernance {
 
-    // constructor() {
-    //     _governance = address(this);
-    //     _governanceMapping[msg.sender] = GovernanceInfo(msg.sender, uint96(0xFFFFFFFFFFFFFFFFFFFFFFFF));
-    // }
-
     /// @dev To support open-zeppelin/upgrades
     /// @param nestGovernanceAddress INestGovernance implementation contract address
     function initialize(address nestGovernanceAddress) public override {

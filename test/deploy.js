@@ -14,12 +14,6 @@ describe('NestOpenMining', function() {
         } = await deploy();
         
         console.log('ok');
-        const NestBatchPlatform2New = await ethers.getContractFactory('NestBatchPlatform2New');
-        const nestBatchPlatform2New2 = await NestBatchPlatform2New.attach('0xF2f9E62f52389EF223f5Fa8b9926e95386935277');
-        console.log('nestBatchPlatform2New2: ' + nestBatchPlatform2New2.address);
-
-        let ci = await nestBatchPlatform2New2.getChannelInfo(0);
-        console.log(ci);
 
         //await nestBatchPlatform2New2.increase(0, 10000000000000000000000000n);
         // await nestBatchPlatform2New.open(

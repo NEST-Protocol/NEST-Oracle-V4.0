@@ -71,7 +71,8 @@ interface INestVote {
         uint96 gainValue;
 
         // The state of this proposal
-        uint32 state;  // 0: proposed | 1: accepted | 2: cancelled
+        // 0: proposed | 1: accepted | 2: cancelled
+        uint32 state;
 
         // The executor of this proposal
         address executor;

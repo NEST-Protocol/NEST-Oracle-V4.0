@@ -11,6 +11,7 @@ import "./interfaces/INToken.sol";
 
 import "./custom/ChainConfig.sol";
 import "./custom/NestFrequentlyUsed.sol";
+
 import "./NestOpenMiningStorage.sol";
 
 /// @dev This contract implemented the mining logic of nest
@@ -57,9 +58,6 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
         // Price pair array
         PricePair[0xFFFF] pairs;
     }
-
-    // Channel to index mapping
-    //mapping(uint=>uint) _channelMapping;
 
     // Price channels
     PriceChannel[] _channels;
@@ -279,6 +277,7 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
 
         // 3. Freeze assets
         uint accountIndex = _addressIndex(msg.sender);
+
         // Freeze token and nest
         // Because of the use of floating-point representation(fraction * 16 ^ exponent), it may bring some precision 
         // loss After assets are frozen according to tokenAmountPerEth * ethNum, the part with poor accuracy may be 
@@ -349,11 +348,9 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
         // 2. Load price sheet
         PriceChannel storage channel = _channels[channelId];
         PricePair storage pair = channel.pairs[pairIndex < 0x10000 ? pairIndex : pairIndex - 0x10000];
-        //PriceSheet[] storage sheets = pair.sheets;
         PriceSheet memory sheet = pair.sheets[index];
 
         // 3. Check state
-        //require(uint(sheet.remainNum) >= takeNum, "NM:!remainNum");
         require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
         sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
 
@@ -504,8 +501,6 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
             PricePair storage pair = channel.pairs[--j];
 
             ///////////////////////////////////////////////////////////////////////////////////////
-            //PriceSheet[] storage sheets = pair.sheets;
-
             uint tokenValue = 0;
 
             // 1. Traverse sheets
@@ -514,8 +509,6 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
                 // ---------------------------------------------------------------------------------
                 uint index = indices[j][--i];
                 PriceSheet memory sheet = pair.sheets[index];
-                //uint height = uint(sheet.height);
-                //uint minerIndex = uint(sheet.miner);
                 
                 // Batch closing quotation can only close sheet of the same user
                 if (accountIndex == 0) {
@@ -610,10 +603,7 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
         // the problem of taking the locked nest as the ore drawing will appear
         // As it will take a long time for nest to finish mining, this problem will not be considered for the time being
         UINT storage balance = _accounts[_accountMapping[msg.sender]].balances[tokenAddress];
-        //uint balanceValue = balance.value;
-        //require(balanceValue >= value, "NM:!balance");
         balance.value -= value;
-
         TransferHelper.safeTransfer(tokenAddress, msg.sender, value);
     }
 
@@ -651,17 +641,6 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
         uint channelId,
         uint index
     ) external view override returns (uint minedBlocks, uint totalShares) {
-
-        // PriceSheet[] storage sheets = _channels[channelId].pairs[0].sheets;
-        // PriceSheet memory sheet = sheets[index];
-
-        // // The bite sheet or ntoken sheet doesn't mining
-        // if (uint(sheet.shares) == 0) {
-        //     return (0, 0);
-        // }
-
-        // return _calcMinedBlocks(sheets, index, sheet);
-
         PriceSheet[] storage sheets = _channels[channelId].pairs[0].sheets;
         return _calcMinedBlocks(sheets, index, sheets[index]);
     }
@@ -911,7 +890,6 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
             totalShares += uint(sheets[i].shares);
         }
 
-        //i = index;
         // Find sheets in the same block forward
         uint prev = height;
         while (index > 0 && uint(prev = sheets[--index].height) == height) {
@@ -1001,15 +979,6 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
 
         return index;
     }
-
-    // // Calculation of attenuation gradient
-    // function _reduction(uint delta) private pure returns (uint) {
-
-    //     if (delta < NEST_REDUCTION_LIMIT) {
-    //         return (NEST_REDUCTION_STEPS >> ((delta / NEST_REDUCTION_SPAN) << 4)) & 0xFFFF;
-    //     }
-    //     return (NEST_REDUCTION_STEPS >> 160) & 0xFFFF;
-    // }
 
     function _reduction(uint delta, uint reductionRate) private pure returns (uint) {
         if (delta < NEST_REDUCTION_LIMIT) {
@@ -1210,7 +1179,6 @@ contract NestBatchMiningNew is NestOpenMiningStorage {
         uint[] memory array = new uint[](count <<= 1);
 
         uint priceEffectSpan = uint(_config.priceEffectSpan);
-        //uint h = block.number - priceEffectSpan;
         uint index = sheets.length;
         uint totalEthNum = 0;
         uint totalTokenValue = 0;
