@@ -251,16 +251,6 @@ contract NestOpenMining is ChainConfig, NestFrequentlyUsed, INestOpenMining {
         }
     }
 
-    // TODO: remove
-    /// @dev Increase NToken
-    /// @param channelId Target channelId
-    /// @param vault Total to decrease
-    function increaseNToken(uint channelId, uint96 vault) external onlyGovernance {
-        PriceChannel storage channel = _channels[channelId];
-        INToken(channel.reward).increaseTotal(vault);
-        channel.vault += vault;
-    }
-
     /// @dev Change opener
     /// @param channelId Target channelId
     /// @param newGovernance New opener address
