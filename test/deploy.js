@@ -37,35 +37,43 @@ describe('NestOpenMining', function() {
         // 8.	通知王露露检查合约参数
         // 9.	通知王露露报价，并观察，验证吃单逻辑
         // 10.	分别查询PETH、NEST、PBTC的新报价和历史报价，验证查询数据是否正确
-        const NestBatchPlatform2New = await ethers.getContractFactory('NestBatchPlatform2New');
-        const newNestBatchPlatform2New = await NestBatchPlatform2New.deploy();
-        console.log('newNestBatchPlatform2New: ' + newNestBatchPlatform2New.address);
-        return;
 
-        // 开通后，确定channelId为0，peth、nest、pbtc的pairIndex分别为0、1、2
-        await nestBatchPlatform2New.open(
-            pusd.address,
-            toBigInt(2000),
-            nest.address,
-            [peth.address, nest.address, pbtc.address], {
-                // Reward per block standard
-                rewardPerBlock: 5000000000000000000n,
+        // const NestBatchPlatform2New = await ethers.getContractFactory('NestBatchPlatform2New');
+        // const newNestBatchPlatform2New = await NestBatchPlatform2New.deploy();
+        // console.log('newNestBatchPlatform2New: ' + newNestBatchPlatform2New.address);
+        // return;
 
-                // Post fee(0.0001eth, DIMI_ETHER). 1000
-                postFeeUnit: 0,
+        // // 开通后，确定channelId为0，peth、nest、pbtc的pairIndex分别为0、1、2
+        // await nestBatchPlatform2New.open(
+        //     pusd.address,
+        //     toBigInt(2000),
+        //     nest.address,
+        //     [peth.address, nest.address, pbtc.address], {
+        //         // Reward per block standard
+        //         rewardPerBlock: 5000000000000000000n,
 
-                // Single query fee (0.0001 ether, DIMI_ETHER). 100
-                singleFee: 2,
+        //         // Post fee(0.0001eth, DIMI_ETHER). 1000
+        //         postFeeUnit: 0,
 
-                // Reduction rate(10000 based). 8000
-                reductionRate: 8000
-            }
-        );
+        //         // Single query fee (0.0001 ether, DIMI_ETHER). 100
+        //         singleFee: 2,
 
-        return;
+        //         // Reduction rate(10000 based). 8000
+        //         reductionRate: 8000
+        //     }
+        // );
 
-        // TODO: 确保channelId为0，并确定注入nest数量
-        await nestBatchPlatform2New.increase(0, 0n);
-        return;
+        // return;
+
+        // let balance = await nest.balanceOf(owner.address);
+        // console.log('balance: ' + balance);
+
+        // //await nest.approve()
+        // console.log('nestBatchPlatform2New: ' + nestBatchPlatform2New.address);
+
+        // await nest.approve(nestBatchPlatform2New.address, balance);
+        // // TODO: 确保channelId为0，并确定注入nest数量
+        // await nestBatchPlatform2New.increase(0, 0n);
+        // return;
     });
 });
