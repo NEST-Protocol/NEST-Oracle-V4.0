@@ -13,7 +13,7 @@ import "./NestOpenMining.sol";
 contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
 
     /// @dev Get the latest trigger price
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function triggeredPrice(uint channelId) external view override noContract returns (uint blockNumber, uint price) {
@@ -21,7 +21,7 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
     }
 
     /// @dev Get the full information of latest trigger price
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     /// @return avgPrice Average price
@@ -38,7 +38,7 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
     }
 
     /// @dev Find the price at block number
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param height Destination block number
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
@@ -50,7 +50,7 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
     }
 
     /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function latestPrice(uint channelId) external view override noContract returns (uint blockNumber, uint price) {
@@ -58,39 +58,17 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
     }
 
     /// @dev Get the last (num) effective price
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param count The number of prices that want to return
-    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return An array which length is num * 2, each two element expresses one price like blockNumber|price
     function lastPriceList(uint channelId, uint count) external view override noContract returns (uint[] memory) {
         return _lastPriceList(_channels[channelId], count);
     } 
 
-    /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
-    /// @param channelId 报价通道编号
-    /// @return latestPriceBlockNumber The block number of latest price
-    /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
-    /// @return triggeredPriceBlockNumber The block number of triggered price
-    /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    /// @return triggeredAvgPrice Average price
-    /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    function latestPriceAndTriggeredPriceInfo(uint channelId) external view override noContract
-    returns (
-        uint latestPriceBlockNumber,
-        uint latestPriceValue,
-        uint triggeredPriceBlockNumber,
-        uint triggeredPriceValue,
-        uint triggeredAvgPrice,
-        uint triggeredSigmaSQ
-    ) {
-        return _latestPriceAndTriggeredPriceInfo(_channels[channelId]);
-    }
-
     /// @dev Returns lastPriceList and triggered price info
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param count The number of prices that want to return
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     /// @return triggeredAvgPrice Average price
@@ -108,23 +86,9 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         return _lastPriceListAndTriggeredPriceInfo(_channels[channelId], count);
     }
 
-    // Payment of transfer fee
-    function _pay(PriceChannel storage channel, uint fee, address payback) private {
-
-        fee = fee * DIMI_ETHER;
-        if (msg.value > fee) {
-            //payable(payback).transfer(msg.value - fee);
-            TransferHelper.safeTransferETH(payback, msg.value - fee);
-        } else {
-            require(msg.value == fee, "NOP:!fee");
-        }
-
-        channel.feeInfo += fee;
-    }
-
     /// @dev Get the latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Target channelId
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function triggeredPrice(
@@ -134,14 +98,12 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint blockNumber, 
         uint price
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _triggeredPrice(channel);
+        return _triggeredPrice(_pay(channelId, payback));
     }
 
     /// @dev Get the full information of latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Target channelId
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     /// @return avgPrice Average price
@@ -157,15 +119,13 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint avgPrice,
         uint sigmaSQ
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _triggeredPriceInfo(channel);
+        return _triggeredPriceInfo(_pay(channelId, payback));
     }
 
     /// @dev Find the price at block number
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param height Destination block number
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function findPrice(
@@ -176,14 +136,12 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint blockNumber, 
         uint price
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _findPrice(channel, height);
+        return _findPrice(_pay(channelId, payback), height);
     }
 
     /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Target channelId
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function latestPrice(
@@ -193,56 +151,27 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint blockNumber, 
         uint price
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _latestPrice(channel);
+        return _latestPrice(_pay(channelId, payback));
     }
 
     /// @dev Get the last (num) effective price
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param count The number of prices that want to return
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @param payback Address to receive refund
+    /// @return An array which length is num * 2, each two element expresses one price like blockNumber|price
     function lastPriceList(
         uint channelId, 
         uint count, 
         address payback
     ) external payable override returns (uint[] memory) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _lastPriceList(channel, count);
-    }
-
-    /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return latestPriceBlockNumber The block number of latest price
-    /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
-    /// @return triggeredPriceBlockNumber The block number of triggered price
-    /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    /// @return triggeredAvgPrice Average price
-    /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    function latestPriceAndTriggeredPriceInfo(uint channelId, address payback) external payable override
-    returns (
-        uint latestPriceBlockNumber,
-        uint latestPriceValue,
-        uint triggeredPriceBlockNumber,
-        uint triggeredPriceValue,
-        uint triggeredAvgPrice,
-        uint triggeredSigmaSQ
-    ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _latestPriceAndTriggeredPriceInfo(channel);
+        return _lastPriceList(_pay(channelId, payback), count);
     }
 
     /// @dev Returns lastPriceList and triggered price info
-    /// @param channelId 报价通道编号
+    /// @param channelId Target channelId
     /// @param count The number of prices that want to return
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @param payback Address to receive refund
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     /// @return triggeredAvgPrice Average price
@@ -260,8 +189,21 @@ contract NestOpenPlatform is NestOpenMining, INestPriceView, INestOpenPrice {
         uint triggeredAvgPrice,
         uint triggeredSigmaSQ
     ) {
-        PriceChannel storage channel = _channels[channelId];
-        _pay(channel, uint(channel.singleFee), payback);
-        return _lastPriceListAndTriggeredPriceInfo(channel, count);
+        return _lastPriceListAndTriggeredPriceInfo(_pay(channelId, payback), count);
+    }
+
+    // Payment of transfer fee
+    function _pay(uint channelId, address payback) private returns (PriceChannel storage channel) {
+
+        channel = _channels[channelId];
+        uint fee = uint(channel.singleFee) * DIMI_ETHER;
+        if (msg.value > fee) {
+            payable(payback).transfer(msg.value - fee);
+            //TransferHelper.safeTransferETH(payback, msg.value - fee);
+        } else {
+            require(msg.value == fee, "NOP:!fee");
+        }
+
+        channel.feeInfo += fee;
     }
 }

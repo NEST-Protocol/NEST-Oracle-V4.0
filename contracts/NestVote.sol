@@ -12,8 +12,6 @@ import "./NestBase.sol";
 /// @dev nest voting contract, implemented the voting logic
 contract NestVote is NestBase, INestVote {
     
-    // constructor() { }
-
     /// @dev Structure is used to represent a storage location. Storage variable can be used to avoid indexing 
     /// from mapping many times
     struct UINT {
@@ -82,10 +80,10 @@ contract NestVote is NestBase, INestVote {
     uint constant NEST_TOTAL_SUPPLY = 10000000000 ether;
 
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(nestGovernanceAddress) when overriding, and override method without onlyGovernance
-    /// @param nestGovernanceAddress INestGovernance implementation contract address
-    function update(address nestGovernanceAddress) public override {
-        super.update(nestGovernanceAddress);
+    ///      super.update(governance) when overriding, and override method without onlyGovernance
+    /// @param governance INestGovernance implementation contract address
+    function update(address governance) public override {
+        super.update(governance);
 
         (
             //address nestTokenAddress
@@ -108,7 +106,7 @@ contract NestVote is NestBase, INestVote {
             _nnIncomeAddress, 
             //address nTokenControllerAddress
               
-        ) = INestGovernance(nestGovernanceAddress).getBuiltinAddress();
+        ) = INestGovernance(governance).getBuiltinAddress();
     }
 
     /// @dev Modify configuration

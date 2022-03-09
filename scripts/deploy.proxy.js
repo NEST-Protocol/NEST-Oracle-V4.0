@@ -22,9 +22,9 @@ exports.deploy = async function() {
     const NestBatchMining = await ethers.getContractFactory('NestBatchPlatform2');
     const NestVote = await ethers.getContractFactory('NestVote');
 
-    console.log('** 开始部署合约 deploy.proxy.js **');
+    console.log('** Deploy: deploy.proxy.js **');
     
-    // 1. 部署依赖合约
+    // 1. Deploy dependent contract
     const nest = await IBNEST.deploy();
     //const nest = await IBNEST.attach('0x0000000000000000000000000000000000000000');
     console.log('nest: ' + nest.address);

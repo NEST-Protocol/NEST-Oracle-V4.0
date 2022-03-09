@@ -7,8 +7,6 @@ import "./NestBase.sol";
 /// @dev The contract is for nest builtin contract address mapping
 abstract contract NestMapping is NestBase, INestMapping {
 
-    // constructor() { }
-
     /// @dev Address of nest token contract
     address _nestTokenAddress;
 

@@ -19,7 +19,7 @@ exports.deploy = async function() {
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestBatchPlatform2 = await ethers.getContractFactory('NestBatchPlatform2');
 
-    console.log('** 开始部署合约 mainnet@20211218.js **');
+    console.log('** Deploy: mainnet@20211218.js **');
     /*
     2021-04-27
     proxy
@@ -50,7 +50,7 @@ exports.deploy = async function() {
     ProxyAdmin: 0x7DBe94A4D6530F411A1E7337c7eb84185c4396e6
     */
 
-    // 1. 部署依赖合约
+    // 1. Deploy dependent contract
     const nest = await IBNEST.deploy();
     //const nest = await IBNEST.attach('0x04abEdA201850aC0124161F037Efd70c74ddC74C');
     console.log('nest: ' + nest.address);

@@ -35,7 +35,7 @@ contract NToken is NestBase, INToken {
     // token information: decimals
     uint8 constant public decimals = 18;
 
-    // token state，high 128 bits represent _totalSupply, low 128 bits represent latestMintAtHeight
+    // token state, high 128 bits represent _totalSupply, low 128 bits represent latestMintAtHeight
     uint256 _state;
     
     // Balances ledger
@@ -48,11 +48,11 @@ contract NToken is NestBase, INToken {
     uint256 immutable public GENESIS_BLOCK_NUMBER;
 
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(nestGovernanceAddress) when overriding, and override method without onlyGovernance
-    /// @param nestGovernanceAddress INestGovernance implementation contract address
-    function update(address nestGovernanceAddress) public override {
-        super.update(nestGovernanceAddress);
-        _ntokenMiningAddress = INestGovernance(nestGovernanceAddress).getNTokenMiningAddress();
+    ///      super.update(governance) when overriding, and override method without onlyGovernance
+    /// @param governance INestGovernance implementation contract address
+    function update(address governance) public override {
+        super.update(governance);
+        _ntokenMiningAddress = INestGovernance(governance).getNTokenMiningAddress();
     }
 
     /// @dev Mint 

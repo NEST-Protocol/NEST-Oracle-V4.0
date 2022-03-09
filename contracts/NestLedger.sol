@@ -9,11 +9,6 @@ import "./NestBase.sol";
 /// @dev Nest ledger contract
 contract NestLedger is NestBase, INestLedger {
 
-    // /// @param nestTokenAddress Address of nest token contract
-    // constructor(address nestTokenAddress) {
-    //     NEST_TOKEN_ADDRESS = nestTokenAddress;
-    // }
-
     /// @dev Structure is used to represent a storage location. 
     /// Storage variable can be used to avoid indexing from mapping many times
     struct UINT {
@@ -42,20 +37,20 @@ contract NestLedger is NestBase, INestLedger {
     }
 
     /// @dev Add reward
-    /// @param channelId 报价通道
+    /// @param channelId channelId Target channelId
     function addETHReward(uint channelId) external payable override {
         UINT storage balance = _ntokenLedger[channelId];
         balance.value += msg.value;
     }
 
     /// @dev The function returns eth rewards of specified ntoken
-    /// @param channelId 报价通道
+    /// @param channelId channelId Target channelId
     function totalETHRewards(uint channelId) external view override returns (uint) {
         return _ntokenLedger[channelId].value;
     }
 
     /// @dev Pay
-    /// @param channelId 报价通道
+    /// @param channelId channelId Target channelId
     /// @param tokenAddress Token address of receiving funds (0 means ETH)
     /// @param to Address to receive
     /// @param value Amount to receive

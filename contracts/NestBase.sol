@@ -24,26 +24,26 @@ contract NestBase {
     //uint constant NEST_GENESIS_BLOCK = 0;
 
     /// @dev To support open-zeppelin/upgrades
-    /// @param nestGovernanceAddress INestGovernance implementation contract address
-    function initialize(address nestGovernanceAddress) public virtual {
+    /// @param governance INestGovernance implementation contract address
+    function initialize(address governance) public virtual {
         require(_governance == address(0), "NEST:!initialize");
-        _governance = nestGovernanceAddress;
+        _governance = governance;
     }
 
     /// @dev INestGovernance implementation contract address
     address public _governance;
 
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(nestGovernanceAddress) when overriding, and override method without onlyGovernance
-    /// @param nestGovernanceAddress INestGovernance implementation contract address
-    function update(address nestGovernanceAddress) public virtual {
+    ///      super.update(governance) when overriding, and override method without onlyGovernance
+    /// @param governance INestGovernance implementation contract address
+    function update(address governance) public virtual {
 
         address governance = _governance;
         require(governance == msg.sender || INestGovernance(governance).checkGovernance(msg.sender, 0), "NEST:!gov");
-        _governance = nestGovernanceAddress;
+        _governance = governance;
 
         // TODO:
-        NEST_TOKEN_ADDRESS = INestGovernance(nestGovernanceAddress).getNestTokenAddress();
+        NEST_TOKEN_ADDRESS = INestGovernance(governance).getNestTokenAddress();
     }
 
     // /// @dev Migrate funds from current contract to NestLedger

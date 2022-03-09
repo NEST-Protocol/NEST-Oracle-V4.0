@@ -29,8 +29,8 @@ contract UpdateAdmin is IVotePropose {
     /// @dev Methods to be called after approved
     function run() external override {
 
-        address nestGovernanceAddress = _nestMappingAddress;// INestMapping(_nestMappingAddress).getNestGovernanceAddress();
+        address governance = _nestMappingAddress;// INestMapping(_nestMappingAddress).getNestGovernanceAddress();
 
-        INestGovernance(nestGovernanceAddress).setGovernance(_addr, _flag);
+        INestGovernance(governance).setGovernance(_addr, _flag);
     }
 }

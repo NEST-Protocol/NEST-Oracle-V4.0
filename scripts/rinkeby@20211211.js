@@ -15,9 +15,9 @@ exports.deploy = async function() {
     const NestVote = await ethers.getContractFactory('NestVote');
     const NestBatchPlatform2 = await ethers.getContractFactory('NestBatchPlatform2');
 
-    console.log('** 开始部署合约 rinkeby@20211211.js **');
+    console.log('** Deploy: rinkeby@20211211.js **');
     
-    // ** 开始部署合约 rinkeby@20211102.js **
+    // ** Deploy: rinkeby@20211102.js **
     // nest: 0xE313F3f49B647fBEDDC5F2389Edb5c93CBf4EE25
     // usdt: 0x20125a7256EFafd0d4Eec24048E08C5045BC5900
     // hbtc: 0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B
@@ -26,7 +26,7 @@ exports.deploy = async function() {
     // nestLedger: 0x005103e352f86e4C32a3CE4B684fe211eB123210
     // nestOpenMining: 0x638461F3Ae49CcC257ef49Fe76CCE5816A9234eF
 
-    //     ** 开始部署合约 rinkeby@20211211.js **
+    //     ** Deploy: rinkeby@20211211.js **
     // pusd: 0x5407cab67ad304FB8A4aC46D83b3Dd63A9dbA575
     // nest: 0xE313F3f49B647fBEDDC5F2389Edb5c93CBf4EE25
     // usdt: 0x20125a7256EFafd0d4Eec24048E08C5045BC5900
@@ -37,7 +37,7 @@ exports.deploy = async function() {
     // nestBatchPlatform2: 0x12af92C6e7a1F855008c6B9dDEd7DcA19B49B51B
     // proxyAdmin: 0xfe40659D3DEbEBC3B5454Ad974401233b3D0E9bC
 
-    // 1. 部署依赖合约
+    // 1. Deploy dependent contract
     //const pusd = await TestERC20.deploy('PUSD', 'PUSD', 18);
     const pusd = await TestERC20.attach('0x5407cab67ad304FB8A4aC46D83b3Dd63A9dbA575');
     console.log('pusd: ' + pusd.address);
@@ -131,7 +131,7 @@ exports.deploy = async function() {
     //     // We can stop post and taking orders by set postEthUnit to 0 (closing and withdraw are not affected)
     //     postEthUnit: 30,
 
-    //     // Post fee(0.0001eth，DIMI_ETHER). 1000
+    //     // Post fee(0.0001eth, DIMI_ETHER). 1000
     //     postFeeUnit: 1000,
 
     //     // Proportion of miners digging(10000 based). 8000
