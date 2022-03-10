@@ -94,7 +94,7 @@ contract SuperMan is IERC20_ {
 
     mapping (address => mapping (address => uint256)) private _allowed;
     
-    IBMapping mappingContract;  // mapping contract
+    IBMapping mappingContract;  // mapping contract address
 
     uint256 private _totalSupply = 1500;
     string public name = "NestNode";
@@ -233,14 +233,14 @@ contract SuperMan is IERC20_ {
         
     }
     
-    // Only administrator
+    // Only for administrator
     modifier onlyOwner(){
         require(mappingContract.checkOwners(msg.sender) == true);
         _;
     }
 }
 
-// mapping contract
+// Mapping contract
 interface IBMapping {
     // Check address
 	function checkAddress(string memory name) external view returns (address contractAddress);

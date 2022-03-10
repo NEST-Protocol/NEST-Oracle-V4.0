@@ -3,14 +3,17 @@
 pragma solidity ^0.8.6;
 
 import "./libs/IERC20.sol";
+
 import "./interfaces/INestVote.sol";
 import "./interfaces/IVotePropose.sol";
 import "./interfaces/INestGovernance.sol";
 import "./interfaces/IProxyAdmin.sol";
-import "./NestBase.sol";
+
+import "./custom/ChainConfig.sol";
+import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev nest voting contract, implemented the voting logic
-contract NestVote is NestBase, INestVote {
+contract NestVote is ChainConfig, NestFrequentlyUsed, INestVote {
     
     /// @dev Structure is used to represent a storage location. Storage variable can be used to avoid indexing 
     /// from mapping many times
