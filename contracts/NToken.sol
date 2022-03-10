@@ -48,11 +48,11 @@ contract NToken is NestBase, INToken {
     uint256 immutable public GENESIS_BLOCK_NUMBER;
 
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(governance) when overriding, and override method without onlyGovernance
-    /// @param governance INestGovernance implementation contract address
-    function update(address governance) public override {
-        super.update(governance);
-        _ntokenMiningAddress = INestGovernance(governance).getNTokenMiningAddress();
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public override {
+        super.update(newGovernance);
+        _ntokenMiningAddress = INestGovernance(newGovernance).getNTokenMiningAddress();
     }
 
     /// @dev Mint 

@@ -80,10 +80,10 @@ contract NestVote is NestBase, INestVote {
     uint constant NEST_TOTAL_SUPPLY = 10000000000 ether;
 
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(governance) when overriding, and override method without onlyGovernance
-    /// @param governance INestGovernance implementation contract address
-    function update(address governance) public override {
-        super.update(governance);
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public override {
+        super.update(newGovernance);
 
         (
             //address nestTokenAddress
@@ -106,7 +106,7 @@ contract NestVote is NestBase, INestVote {
             _nnIncomeAddress, 
             //address nTokenControllerAddress
               
-        ) = INestGovernance(governance).getBuiltinAddress();
+        ) = INestGovernance(newGovernance).getBuiltinAddress();
     }
 
     /// @dev Modify configuration

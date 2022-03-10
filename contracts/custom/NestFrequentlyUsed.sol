@@ -20,4 +20,12 @@ contract NestFrequentlyUsed is NestBase {
     // algorithm is used to deduce and convert the nest, and the new algorithm is used to mine the nest2.0
     // on-line flow, the actual block is 5120000
     //uint constant NEST_GENESIS_BLOCK = 0;
+
+    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance IHedgeGovernance implementation contract address
+    function update(address newGovernance) public virtual override {
+        super.update(newGovernance);
+        NEST_TOKEN_ADDRESS = INestGovernance(newGovernance).getNestTokenAddress();
+    }
 }

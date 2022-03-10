@@ -14,14 +14,8 @@ contract NestBase {
     // address constant NEST_TOKEN_ADDRESS = 0x04abEdA201850aC0124161F037Efd70c74ddC74C;
     address NEST_TOKEN_ADDRESS;
 
-    // Genesis block number of nest
-    // NEST token contract is created at block height 6913517. However, because the mining algorithm of nest1.0
-    // is different from that at present, a new mining algorithm is adopted from nest2.0. The new algorithm
-    // includes the attenuation logic according to the block. Therefore, it is necessary to trace the block
-    // where the nest begins to decay. According to the circulation when nest2.0 is online, the new mining
-    // algorithm is used to deduce and convert the nest, and the new algorithm is used to mine the nest2.0
-    // on-line flow, the actual block is 5120000
-    //uint constant NEST_GENESIS_BLOCK = 0;
+    /// @dev INestGovernance implementation contract address
+    address public _governance;
 
     /// @dev To support open-zeppelin/upgrades
     /// @param governance INestGovernance implementation contract address
@@ -30,34 +24,15 @@ contract NestBase {
         _governance = governance;
     }
 
-    /// @dev INestGovernance implementation contract address
-    address public _governance;
-
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(governance) when overriding, and override method without onlyGovernance
-    /// @param governance INestGovernance implementation contract address
-    function update(address governance) public virtual {
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public virtual {
 
         address governance = _governance;
         require(governance == msg.sender || INestGovernance(governance).checkGovernance(msg.sender, 0), "NEST:!gov");
-        _governance = governance;
-
-        // TODO:
-        NEST_TOKEN_ADDRESS = INestGovernance(governance).getNestTokenAddress();
+        _governance = newGovernance;
     }
-
-    // /// @dev Migrate funds from current contract to NestLedger
-    // /// @param tokenAddress Destination token address.(0 means eth)
-    // /// @param value Migrate amount
-    // function migrate(address tokenAddress, uint value) external onlyGovernance {
-
-    //     address to = INestGovernance(_governance).getNestLedgerAddress();
-    //     if (tokenAddress == address(0)) {
-    //         INestLedger(to).addETHReward { value: value } (0);
-    //     } else {
-    //         TransferHelper.safeTransfer(tokenAddress, to, value);
-    //     }
-    // }
 
     //---------modifier------------
 
