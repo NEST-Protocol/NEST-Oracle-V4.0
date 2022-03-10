@@ -5,7 +5,7 @@ pragma solidity ^0.8.6;
 /// @dev This contract implemented the mining logic of nest
 interface INestBatchPrice {
     
-    //// @dev Get the latest trigger price
+    /// @dev Get the latest trigger price
     /// @param channelId Target channelId
     /// @param pairIndex Target pairIndex
     /// @param payback Address to receive refund
