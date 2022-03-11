@@ -26,6 +26,7 @@ exports.deploy = async function() {
     // nestLedger: 0x005103e352f86e4C32a3CE4B684fe211eB123210
     // nestOpenMining: 0x638461F3Ae49CcC257ef49Fe76CCE5816A9234eF
     // nestBatchPlatform2: 0xc08E6A853241B9a08225EECf93F3b279FA7A1bE7
+    // proxyAdmin: 0xfe40659D3DEbEBC3B5454Ad974401233b3D0E9bC
 
     // 1. Deploy dependent contract
     //const pusd = await TestERC20.deploy('PUSD', 'PUSD', 18);

@@ -22,5 +22,10 @@ describe('NestOpenMining', function() {
         const POSTFEE = 0.1;
         const OPEN_FEE = 0n;
         const EFFECT_BLOCK = 50;
+
+        const NestBatchPlatform2 = await ethers.getContractFactory('NestBatchPlatform2');
+        const newNestBatchPlatform2 = await NestBatchPlatform2.deploy();
+        console.log('newNestBatchPlatform2: ' + newNestBatchPlatform2.address);
+        
     });
 });
