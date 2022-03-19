@@ -7,25 +7,28 @@ describe('NestOpenMining', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
 
         const { 
-            eth, nest, pusd, peth, hbtc,
+            eth, nest, usdt, hbtc,
 
             nestGovernance, nestLedger,
-            nestOpenMining, nestBatchPlatform2
+            nestBatchMining
         } = await deploy();
         
         console.log('ok');
-        //await nest.approve(nestBatchPlatform2.address, 100000000000000000000000000n);
-        //await pusd.approve(nestBatchPlatform2.address, 100000000000000000000000000n);
-        //await hbtc.approve(nestBatchPlatform2.address, 100000000000000000000000000n);
-        
-        const GASLIMIT = 400000n;
-        const POSTFEE = 0.1;
-        const OPEN_FEE = 0n;
-        const EFFECT_BLOCK = 50;
 
-        const NestBatchPlatform2 = await ethers.getContractFactory('NestBatchPlatform2');
-        const newNestBatchPlatform2 = await NestBatchPlatform2.deploy();
-        console.log('newNestBatchPlatform2: ' + newNestBatchPlatform2.address);
-        
+        // await nestBatchMining.open(
+        //     usdt.address,
+        //     toBigInt(2000),
+        //     nest.address,
+        //     [nest.address, hbtc.address], {
+        //         rewardPerBlock: 1000000000000000000n,
+        //         postFeeUnit: 0,
+        //         singleFee: 2,
+        //         reductionRate: 8000
+        //     }
+        // );
+
+        // await nest.transfer(owner.address, toBigInt(100000000));
+        // await nest.approve(nestBatchMining.address, toBigInt(100000000));
+        // await nestBatchMining.increase(0, toBigInt(100000000));
     });
 });
