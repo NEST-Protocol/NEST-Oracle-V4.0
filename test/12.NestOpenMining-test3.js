@@ -275,8 +275,8 @@ describe('NestOpenMining', function() {
                 //await nestBatchMining.stat(0);
 
                 let nq = await ethers.getContractAt('INestBatchPriceView', nestBatchMining.address);
-                let pi = await nq.triggeredPriceInfo(0, 0);
-                console.log(UI(pi));
+                //let pi = await nq.triggeredPriceInfo(0, 0);
+                //console.log(UI(pi));
                 
                 let list = await nestBatchMining.list(0, 0, 0, (await nestBatchMining.list(0, 0, 0, 1, 0))[0].index + 1, 1);
                 for (var i = 0; i < list.length; ++i) {
@@ -314,10 +314,10 @@ describe('NestOpenMining', function() {
                     avgPrice: avgPrice,
                     sigmaSQ: sigmaSQ
                 });
-                console.log({
-                    avgPrice: toDecimal(pi.avgPrice, 6),
-                    sigmaSQ: toDecimal(pi.sigmaSQ)
-                })
+                // console.log({
+                //     avgPrice: toDecimal(pi.avgPrice, 6),
+                //     sigmaSQ: toDecimal(pi.sigmaSQ)
+                // })
             }
         }
     });

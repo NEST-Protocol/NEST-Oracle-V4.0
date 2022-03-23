@@ -151,8 +151,8 @@ describe('NestOpenMining', function() {
 
             console.log('price: ');
             let nestPrice = await ethers.getContractAt('INestBatchPriceView', nestBatchMining.address);
-            let price = await nestPrice.triggeredPriceInfo(0, 0);
-            console.log(UI(price));
+            // let price = await nestPrice.triggeredPriceInfo(0, 0);
+            // console.log(UI(price));
         }
     });
 });
