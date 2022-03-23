@@ -390,7 +390,10 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             // Calculate the price
             // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
             // is placed before the sheet is added, which can reduce unnecessary traversal
-            _stat(config, pair);
+
+            // Volatility and average price will not be activated temporarily
+            // by chenf 2022-03-23
+            //_stat(config, pair);
             
             // 6. Create token price sheet
             emit Post(channelId, cn, msg.sender, pair.sheets.length, scale, equivalent);
@@ -507,7 +510,10 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         // 5. Calculate the price
         // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
         // is placed before the sheet is added, which can reduce unnecessary traversal
-        _stat(config, pair);
+
+        // Volatility and average price will not be activated temporarily
+        // by chenf 2022-03-23
+        //_stat(config, pair);
 
         // 6. Create price sheet
         emit Post(channelId, pairIndex, msg.sender, pair.sheets.length, needEthNum, newEquivalent);
@@ -647,7 +653,9 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                 // ---------------------------------------------------------------------------------
             }
 
-            _stat(config, pair);
+            // Volatility and average price will not be activated temporarily
+            // by chenf 2022-03-23
+            //_stat(config, pair);
             ///////////////////////////////////////////////////////////////////////////////////////
 
             // Unfreeze token1
@@ -831,6 +839,9 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         ));
     }
 
+    /*
+    // Volatility and average price will not be activated temporarily
+    // by chenf 2022-03-23
     // Calculate price, average price and volatility
     function _stat(Config memory config, PricePair storage pair) private {
         
@@ -953,7 +964,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             p0.index = uint32(index);
             pair.price = p0;
         }
-    }
+    }*/
 
     // Calculation number of blocks which mined
     function _calcMinedBlocks(
@@ -1109,13 +1120,17 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
     /// @return price The token price. (1eth equivalent to (price) token)
     function _triggeredPrice(PricePair storage pair) internal view returns (uint blockNumber, uint price) {
 
-        PriceInfo memory priceInfo = pair.price;
+        // Volatility and average price will not be activated temporarily
+        // by chenf 2022-03-23
+        revert("NM:not support");
 
-        if (uint(priceInfo.remainNum) > 0) {
-            return (uint(priceInfo.height) + uint(_config.priceEffectSpan), _decodeFloat(priceInfo.priceFloat));
-        }
+        // PriceInfo memory priceInfo = pair.price;
+
+        // if (uint(priceInfo.remainNum) > 0) {
+        //     return (uint(priceInfo.height) + uint(_config.priceEffectSpan), _decodeFloat(priceInfo.priceFloat));
+        // }
         
-        return (0, 0);
+        // return (0, 0);
     }
 
     /// @dev Get the full information of latest trigger price
@@ -1133,18 +1148,22 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         uint sigmaSQ
     ) {
 
-        PriceInfo memory priceInfo = pair.price;
+        // Volatility and average price will not be activated temporarily
+        // by chenf 2022-03-23
+        revert("NM:not support");
 
-        if (uint(priceInfo.remainNum) > 0) {
-            return (
-                uint(priceInfo.height) + uint(_config.priceEffectSpan),
-                _decodeFloat(priceInfo.priceFloat),
-                _decodeFloat(priceInfo.avgFloat),
-                (uint(priceInfo.sigmaSQ) * 1 ether) >> 48
-            );
-        }
+        // PriceInfo memory priceInfo = pair.price;
 
-        return (0, 0, 0, 0);
+        // if (uint(priceInfo.remainNum) > 0) {
+        //     return (
+        //         uint(priceInfo.height) + uint(_config.priceEffectSpan),
+        //         _decodeFloat(priceInfo.priceFloat),
+        //         _decodeFloat(priceInfo.avgFloat),
+        //         (uint(priceInfo.sigmaSQ) * 1 ether) >> 48
+        //     );
+        // }
+
+        // return (0, 0, 0, 0);
     }
 
     /// @dev Find the price at block number
