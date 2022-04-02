@@ -21,7 +21,7 @@ task("accounts", "Prints the list of accounts", async () => {
  */
 module.exports = {
   solidity: {
-    version: '0.8.12',
+    version: '0.8.13',
     settings: {
       optimizer: {
         enabled: true,
@@ -78,6 +78,14 @@ module.exports = {
       gasPrice: 10e9,
       gas: 6000000,
       accounts: [config.account.kcc_test.key, config.account.kcc_test.userA, config.account.kcc_test.userB],
+      timeout: 2000000000
+    },
+    map_test: {
+      url: "https://poc2-rpc.maplabs.io",
+      chainId: 22776,
+      gasPrice: 1000e9,
+      gas: 6000000,
+      accounts: [config.account.map_test.key, config.account.map_test.userA, config.account.map_test.userB],
       timeout: 2000000000
     },
     hardhat: {
