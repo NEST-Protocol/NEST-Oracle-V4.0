@@ -80,6 +80,14 @@ module.exports = {
       accounts: [config.account.kcc_test.key, config.account.kcc_test.userA, config.account.kcc_test.userB],
       timeout: 2000000000
     },
+    kcc_main: {
+      url: "https://rpc-mainnet.kcc.network",
+      chainId: 321,
+      gasPrice: 1e9,
+      gas: 6000000,
+      accounts: [config.account.kcc_main.key, config.account.kcc_main.userA, config.account.kcc_main.userB],
+      timeout: 2000000000
+    },
     hardhat: {
       gas: 6000000,
       initialBaseFeePerGas: 0,
