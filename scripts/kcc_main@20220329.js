@@ -13,27 +13,27 @@ exports.deploy = async function() {
     const NestBatchMining = await ethers.getContractFactory('NestBatchPlatform2');
 
     console.log('** Deploy: kcc_main@20220329.js **');
-    
+
+    // PETH:0x6cce8b9da777Ab10B11f4EA8510447431ED6ad1E
+    // PUSD:0x0C4CD7cA70172Af5f4BfCb7b0ACBf6EdFEaFab31
+    // PBTC:0x32D4a9a94537a88118e878c56b93009Af234A6ce
+    // NEST:0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7
+
     // 1. Deploy dependent contract
-    // TODO: 确定地址
     //const peth = await TestERC20.deploy('PETH', 'PETH', 18);
-    const peth = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    const peth = await TestERC20.attach('0x6cce8b9da777Ab10B11f4EA8510447431ED6ad1E');
     console.log('peth: ' + peth.address);
 
-    // TODO: 确定地址
     //const pusd = await TestERC20.deploy('PUSD', 'PUSD', 18);
-    const pusd = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    const pusd = await TestERC20.attach('0x0C4CD7cA70172Af5f4BfCb7b0ACBf6EdFEaFab31');
     console.log('pusd: ' + pusd.address);
 
-    // TODO: 确定地址
     //const pbtc = await TestERC20.deploy('PBTC', 'PBTC', 18);
-    const pbtc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    const pbtc = await TestERC20.attach('0x32D4a9a94537a88118e878c56b93009Af234A6ce');
     console.log('pbtc: ' + pbtc.address);
 
-    // TODO: 确定地址
-    // TODO: 修改代码中的NEST地址常量
     //const nest = await TestERC20.deploy('NEST', 'NEST', 18);
-    const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    const nest = await TestERC20.attach('0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7');
     console.log('nest: ' + nest.address);
 
     const nestGovernance = await upgrades.deployProxy(NestGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
