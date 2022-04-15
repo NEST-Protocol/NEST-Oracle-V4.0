@@ -15,29 +15,28 @@ describe('NestOpenMining', function() {
         
         console.log('ok');
 
-        return;
-        await nestBatchMining.open(
-            pusd.address,
-            toBigInt(2000),
-            nest.address,
-            [peth.address, nest.address, pbtc.address], {
-                // Reward per block standard
-                rewardPerBlock: 1000000000000000000n,
+        // await nestBatchMining.open(
+        //     pusd.address,
+        //     toBigInt(2000),
+        //     nest.address,
+        //     [peth.address, nest.address, pbtc.address], {
+        //         // Reward per block standard
+        //         rewardPerBlock: 1000000000000000000n,
 
-                // Post fee(0.0001eth, DIMI_ETHER). 1000
-                postFeeUnit: 0,
+        //         // Post fee(0.0001eth, DIMI_ETHER). 1000
+        //         postFeeUnit: 0,
 
-                // Single query fee (0.0001 ether, DIMI_ETHER). 100
-                singleFee: 20,
+        //         // Single query fee (0.0001 ether, DIMI_ETHER). 100
+        //         singleFee: 20,
 
-                // Reduction rate(10000 based). 8000
-                reductionRate: 8000
-            }
-        );
+        //         // Reduction rate(10000 based). 8000
+        //         reductionRate: 8000
+        //     }
+        // );
 
-        return;
+        // return;
         //await nest.transfer(owner.address, toBigInt(100000000));
-        await nest.approve(nestBatchMining.address, toBigInt(100000000));
-        await nestBatchMining.increase(0, toBigInt(100000000));
+        // await nest.approve(nestBatchMining.address, toBigInt(100000000));
+        // await nestBatchMining.increase(0, toBigInt(100000000));
     });
 });

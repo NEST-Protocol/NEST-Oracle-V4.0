@@ -13,6 +13,12 @@ task("accounts", "Prints the list of accounts", async () => {
   }
 });
 
+process.env.HTTP_PROXY = '127.0.0.1:8580';
+process.env.HTTPS_PROXY = '127.0.0.1:8580';
+
+// console.log('process.env.HTTP_PROXY: ' + process.env.HTTP_PROXY);
+// console.log('process.env.HTTPS_PROXY: ' + process.env.HTTPS_PROXY);
+
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
