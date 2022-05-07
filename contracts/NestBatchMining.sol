@@ -398,15 +398,15 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             _create(pair.sheets, accountIndex, uint32(scale), uint(config.pledgeNest), cn == 0 ? 1 : 0, equivalent);
         }
 
-        // 4. Deposit fee
-        // Only postFeeUnit > 0 need fee
-        uint postFeeUnit = uint(channel.postFeeUnit);
-        if (postFeeUnit > 0) {
-            require(fee >= postFeeUnit * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
-        }
-        if (fee > 0) {
-            channel.rewards += _toUInt96(fee);
-        }
+        // // 4. Deposit fee
+        // // Only postFeeUnit > 0 need fee
+        // uint postFeeUnit = uint(channel.postFeeUnit);
+        // if (postFeeUnit > 0) {
+        //     require(fee >= postFeeUnit * DIMI_ETHER + tx.gasprice * 400000, "NM:!fee");
+        // }
+        // if (fee > 0) {
+        //     channel.rewards += _toUInt96(fee);
+        // }
     }
 
     /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet

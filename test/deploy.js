@@ -66,9 +66,10 @@ describe('NestOpenMining', function() {
             // ProxyAdmin: 0x7DBe94A4D6530F411A1E7337c7eb84185c4396e6
 
             // 4. Check view methods, eg. earned
+            return;
         }
 
-        if (false) {
+        if (true) {
             // 2022-05-08 10:30 Deploy and update NestBatchMining
             // 1. Deploy contract
             const newNestBatchPlatform2 = await NestBatchPlatform2.deploy();
@@ -80,6 +81,7 @@ describe('NestOpenMining', function() {
             // ProxyAdmin: 0x7DBe94A4D6530F411A1E7337c7eb84185c4396e6
 
             // 4. Check view methods. eg. earned
+            return;
         }
 
         if (false) {
