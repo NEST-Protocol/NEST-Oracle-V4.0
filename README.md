@@ -75,3 +75,13 @@ npx truffle migrate --network ropsten
 | nestGovernance | INestGovernance | 0xa52936bD3848567Fbe4bA24De3370ABF419fC1f7 |
 | nestLedger | INestLedger | 0x005103e352f86e4C32a3CE4B684fe211eB123210 |
 | nestOpenMining | INestOpenMining, INestOpenPrice, INestPriceView | 0x638461F3Ae49CcC257ef49Fe76CCE5816A9234eF |
+
+## 2022-03-29@kcc_main
+| Name | Interfaces | kcc_main |
+| ---- | ---- | ---- |
+| peth | IERC20 | 0x6cce8b9da777Ab10B11f4EA8510447431ED6ad1E |
+| pusd | IERC20 | 0x0C4CD7cA70172Af5f4BfCb7b0ACBf6EdFEaFab31 |
+| pbtc | IERC20 | 0x32D4a9a94537a88118e878c56b93009Af234A6ce |
+| nest | IERC20 | 0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7 |
+| nestGovernance | INestGovernance | 0x7b5ee1Dc65E2f3EDf41c798e7bd3C22283C3D4bb |
+| nestBatchMining | INestBatchMining, INestBatchPriceView, INestBatchPrice2 | 0x7DBe94A4D6530F411A1E7337c7eb84185c4396e6 |
