@@ -7,7 +7,6 @@ import "./libs/TransferHelper.sol";
 
 import "./interfaces/INestBatchMining.sol";
 import "./interfaces/INestLedger.sol";
-import "./interfaces/INToken.sol";
 
 import "./custom/ChainConfig.sol";
 import "./custom/NestFrequentlyUsed.sol";
@@ -182,6 +181,8 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         address[] calldata tokens,
         ChannelConfig calldata config
     ) external override {
+
+        require(unit > 0, "NOM:unit must > 0");
 
         // Emit open event
         emit Open(_channels.length, token0, unit, reward);

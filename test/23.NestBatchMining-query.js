@@ -7,14 +7,7 @@ describe('NestOpenMining', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         const QueryTest = await ethers.getContractFactory('QueryTest');
         
-        const { 
-            nest, usdt, hbtc, cofi, usdc,
-
-            nestGovernance, nestLedger,
-            nestMining, nestBatchMining,
-            nestPriceFacade, nestVote,
-            nTokenController, nestRedeeming
-        } = await deploy();
+        const { nest, usdt, hbtc, cofi, usdc, nestBatchMining } = await deploy();
 
         const getAccountInfo = async function(account) {
             let acc = account;

@@ -7,14 +7,7 @@ describe('NestOpenMining', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         const NToken = await ethers.getContractFactory('NToken');
 
-        const { 
-            nest, usdt, hbtc,
-
-            nestGovernance, nestLedger,
-            nestMining, nestBatchMining,
-            nestPriceFacade, nestVote,
-            nTokenController, nestRedeeming
-        } = await deploy();
+        const { nest, usdt, hbtc, nestGovernance, nestBatchMining } = await deploy();
         const nhbtc = await NToken.deploy('NToken001', 'N001');
         await nhbtc.initialize(nestGovernance.address);
         await nhbtc.update(nestGovernance.address);
