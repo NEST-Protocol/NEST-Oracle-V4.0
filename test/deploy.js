@@ -160,7 +160,7 @@ describe('NestOpenMining', function() {
         // }
 
         // KCC
-        if (true) {
+        if (false) {
             const nestBatchPlatform = await NestBatchPlatform2.attach('0x7DBe94A4D6530F411A1E7337c7eb84185c4396e6');
             const c = await nestBatchPlatform.getChannelInfo(0);
             const ci = toCi(c);

@@ -136,7 +136,7 @@ describe('NestOpenMining', function() {
             console.log(UI(ci));
             expect(ci.opener).to.eq(owner.address);
 
-            if (true) {
+            if (false) {
                 console.log('5. pay');
                 
                 let rewards = await nestBatchMining.totalETHRewards(0);

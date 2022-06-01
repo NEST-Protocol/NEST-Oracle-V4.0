@@ -51,14 +51,6 @@ exports.deploy = async function() {
     //const nestLedger = await NestLedger.attach('0x0000000000000000000000000000000000000000');
     console.log('nestLedger: ' + nestLedger.address);
 
-    // const nestMining = await upgrades.deployProxy(NestMining, [nestGovernance.address], { initializer: 'initialize' });
-    // //const nestMining = await NestMining.attach('0x0000000000000000000000000000000000000000');
-    // console.log('nestMining: ' + nestMining.address);
-
-    const nestOpenMining = await upgrades.deployProxy(NestOpenMining, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestOpenMining = await NestOpenMining.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestOpenMining: ' + nestOpenMining.address);
-
     const nestBatchMining = await upgrades.deployProxy(NestBatchMining, [nestGovernance.address], { initializer: 'initialize' });
     //const nestBatchMining = await NestBatchMining.attach('0x0000000000000000000000000000000000000000');
     console.log('nestBatchMining: ' + nestBatchMining.address);
@@ -71,7 +63,7 @@ exports.deploy = async function() {
         '0x0000000000000000000000000000000000000000', //nestMining.address,
         '0x0000000000000000000000000000000000000000', //nestMining.address,
         '0x0000000000000000000000000000000000000000', //nestPriceFacade.address,
-        nestVote.address,
+        '0x0000000000000000000000000000000000000000',
         '0x0000000000000000000000000000000000000000', //nestMining.address,
         '0x0000000000000000000000000000000000000000', //nnIncome.address,
         '0x0000000000000000000000000000000000000000'  //nTokenController.address
@@ -82,19 +74,6 @@ exports.deploy = async function() {
 
     console.log('5. nestBatchMining.update()');
     await nestBatchMining.update(nestGovernance.address);
-
-    console.log('10. nestOpenMining.setConfig()');
-    await nestOpenMining.setConfig({
-        // -- Public configuration
-        // The number of times the sheet assets have doubled. 4
-        maxBiteNestedLevel: 4,
-        
-        // Price effective block interval. 20
-        priceEffectSpan: 50,
-
-        // The amount of nest to pledge for each post (Unit: 1000). 100
-        pledgeNest: 100
-    });
 
     console.log('11. nestBatchMining.setConfig()');
     await nestBatchMining.setConfig({
