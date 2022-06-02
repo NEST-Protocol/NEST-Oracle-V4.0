@@ -399,6 +399,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             _create(pair.sheets, accountIndex, uint32(scale), uint(config.pledgeNest), cn == 0 ? 1 : 0, equivalent);
         }
 
+        // Remove post fee logic, and reserve postFeeUnit field
         // // 4. Deposit fee
         // // Only postFeeUnit > 0 need fee
         // uint postFeeUnit = uint(channel.postFeeUnit);

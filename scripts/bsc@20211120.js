@@ -12,7 +12,6 @@ exports.deploy = async function() {
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestLedger = await ethers.getContractFactory('NestLedger');
     const NestOpenMining = await ethers.getContractFactory('NestOpenPlatform');
-    const NestVote = await ethers.getContractFactory('NestVote');
 
     console.log('** Deploy: bsc@20211120.js **');
     
@@ -50,70 +49,6 @@ exports.deploy = async function() {
     const nestOpenMining = await NestOpenMining.attach('0x09CE0e021195BA2c1CDE62A8B187abf810951540');
     console.log('nestOpenMining: ' + nestOpenMining.address);
 
-    // console.log('1. nestGovernance.setBuiltinAddress()');
-    // await nestGovernance.setBuiltinAddress(
-    //     nest.address,
-    //     '0x0000000000000000000000000000000000000000',
-    //     nestLedger.address,
-    //     '0x0000000000000000000000000000000000000000', //nestMining.address,
-    //     '0x0000000000000000000000000000000000000000', //nestMining.address,
-    //     '0x0000000000000000000000000000000000000000', //nestPriceFacade.address,
-    //     '0x0000000000000000000000000000000000000000',
-    //     '0x0000000000000000000000000000000000000000', //nestMining.address,
-    //     '0x0000000000000000000000000000000000000000', //nnIncome.address,
-    //     '0x0000000000000000000000000000000000000000'  //nTokenController.address
-    // );
-
-    // console.log('2. nestLedger.update()');
-    // await nestLedger.update(nestGovernance.address);
-    // //console.log('3. nestMining.update()');
-    // //await nestMining.update(nestGovernance.address);
-    // console.log('4. nestOpenMining.update()');
-    // await nestOpenMining.update(nestGovernance.address);
-    //console.log('5. nestPriceFacade.update()');
-    //await nestPriceFacade.update(nestGovernance.address);
-    // console.log('6. nestVote.update()');
-    // await nestVote.update(nestGovernance.address);
-    //console.log('7. nTokenController.update()');
-    //await nTokenController.update(nestGovernance.address);
-    //console.log('8. nnIncome.update()');
-    // await nnIncome.update(nestGovernance.address);
-    // console.log('9. nestRedeeming.update()');
-    // await nestRedeeming.update(nestGovernance.address);
-
-    // console.log('10. nestOpenMining.setConfig()');
-    // await nestOpenMining.setConfig({
-    //     // // Eth number of each post. 30
-    //     // // We can stop post and taking orders by set postEthUnit to 0 (closing and withdraw are not affected)
-    //     // postEthUnit: 30,
-
-    //     // // Post fee(0.0001eth, DIMI_ETHER). 1000
-    //     // postFeeUnit: 1000,
-
-    //     // // Proportion of miners digging(10000 based). 8000
-    //     // minerNestReward: 8000,
-        
-    //     // // The proportion of token dug by miners is only valid for the token created in version 3.0
-    //     // // (10000 based). 9500
-    //     // minerNTokenReward: 9500,
-
-    //     // // When the circulation of ntoken exceeds this threshold, post() is prohibited(Unit: 10000 ether). 500
-    //     // doublePostThreshold: 500,
-        
-    //     // // The limit of ntoken mined blocks. 100
-    //     // ntokenMinedBlockLimit: 100,
-
-    //     // -- Public configuration
-    //     // The number of times the sheet assets have doubled. 4
-    //     maxBiteNestedLevel: 4,
-        
-    //     // Price effective block interval. 20
-    //     priceEffectSpan: 50,
-
-    //     // The amount of nest to pledge for each post (Unit: 1000). 100
-    //     pledgeNest: 100
-    // });
-
     console.log('---------- OK ----------');
     
     const contracts = {
@@ -123,12 +58,7 @@ exports.deploy = async function() {
 
         nestGovernance: nestGovernance,
         nestLedger: nestLedger,
-        //nestMining: nestMining,
         nestOpenMining: nestOpenMining,
-        //nestPriceFacade: nestPriceFacade,
-        //nestVote: nestVote,
-        // nTokenController: nTokenController,
-        // nestRedeeming: nestRedeeming
     };
 
     return contracts;

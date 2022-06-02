@@ -143,20 +143,46 @@ exports.Vp = function(S0, K, sigma, miu, T) {
     let d1v = exports.d1(S0, K, sigma, miu, T);
     return K * snd(d1v / Math.sqrt(T))
     - S0 * Math.exp(miu * T) * snd(d1v / Math.sqrt(T) - sigma * Math.sqrt(T));
-}
+};
 
 exports.UI = function(obj) {
     if (obj) {
         var res = {};
+
+        var index = 0;
+        var empty = true;
         for (var i in obj) {
-            if (obj[i] && obj[i]._isBigNumber) {
-                res[i] = obj[i].toString();
+            if (i == index++) continue;
+            empty = false;
+            if (obj[i] && typeof obj[i] == 'object') {
+                if (obj[i]._isBigNumber) {
+                    res[i] = obj[i].toString();
+                } else {
+                    res[i] = exports.UI(obj[i]);
+                }
             } else {
                 res[i] = obj[i];
             }
+        }
+
+        if (empty) {
+            var arr = [];
+            for (var i in obj) {
+                empty = false;
+                if (obj[i] && typeof obj[i] == 'object') {
+                    if (obj[i]._isBigNumber) {
+                        arr.push(obj[i].toString());
+                    } else {
+                        arr.push(exports.UI(obj[i]));
+                    }
+                } else {
+                    arr.push(obj[i]);
+                }
+            }
+            return arr;
         }
         return res;
     }
 
     return obj;
-}
+};

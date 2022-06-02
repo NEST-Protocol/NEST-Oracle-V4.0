@@ -78,22 +78,6 @@ exports.deploy = async function() {
     const nestBatchPlatform2 = await NestBatchPlatform2.attach('0xE544cF993C7d477C7ef8E91D28aCA250D135aa03');
     console.log('nestBatchPlatform2: ' + nestBatchPlatform2.address);
 
-    //console.log('6. nestBatchPlatform2.update()');
-    //await nestBatchPlatform2.update(nestGovernance.address);
-
-    // console.log('11. nestBatchPlatform2.setConfig()');
-    // await nestBatchPlatform2.setConfig({
-    //     // -- Public configuration
-    //     // The number of times the sheet assets have doubled. 4
-    //     maxBiteNestedLevel: 4,
-        
-    //     // Price effective block interval. 20
-    //     priceEffectSpan: 20,
-
-    //     // The amount of nest to pledge for each post (Unit: 1000). 100
-    //     pledgeNest: 100
-    // });
-
     console.log('---------- OK ----------');
     
     const contracts = {
