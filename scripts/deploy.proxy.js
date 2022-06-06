@@ -17,7 +17,6 @@ exports.deploy = async function() {
         }
     });
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
-    const NestLedger = await ethers.getContractFactory('NestLedger');
     const NestBatchMining = await ethers.getContractFactory('NestBatchPlatform2');
 
     console.log('** Deploy: deploy.proxy.js **');
@@ -47,10 +46,6 @@ exports.deploy = async function() {
     //const nestGovernance = await NestGovernance.attach('0x0000000000000000000000000000000000000000');
     console.log('nestGovernance: ' + nestGovernance.address);
 
-    const nestLedger = await upgrades.deployProxy(NestLedger, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestLedger = await NestLedger.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestLedger: ' + nestLedger.address);
-
     const nestBatchMining = await upgrades.deployProxy(NestBatchMining, [nestGovernance.address], { initializer: 'initialize' });
     //const nestBatchMining = await NestBatchMining.attach('0x0000000000000000000000000000000000000000');
     console.log('nestBatchMining: ' + nestBatchMining.address);
@@ -59,7 +54,7 @@ exports.deploy = async function() {
     await nestGovernance.setBuiltinAddress(
         nest.address,
         '0x0000000000000000000000000000000000000000',
-        nestLedger.address,
+        '0x0000000000000000000000000000000000000000',
         '0x0000000000000000000000000000000000000000', //nestMining.address,
         '0x0000000000000000000000000000000000000000', //nestMining.address,
         '0x0000000000000000000000000000000000000000', //nestPriceFacade.address,
@@ -68,9 +63,6 @@ exports.deploy = async function() {
         '0x0000000000000000000000000000000000000000', //nnIncome.address,
         '0x0000000000000000000000000000000000000000'  //nTokenController.address
     );
-
-    console.log('2. nestLedger.update()');
-    await nestLedger.update(nestGovernance.address);
 
     console.log('5. nestBatchMining.update()');
     await nestBatchMining.update(nestGovernance.address);
@@ -101,7 +93,6 @@ exports.deploy = async function() {
         cofi: cofi,
 
         nestGovernance: nestGovernance,
-        nestLedger: nestLedger,
         nestBatchMining: nestBatchMining
     };
 

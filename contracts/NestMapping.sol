@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.6;
 
+import "./interfaces/INestMapping.sol";
 import "./NestBase.sol";
 
 /// @dev The contract is for nest builtin contract address mapping

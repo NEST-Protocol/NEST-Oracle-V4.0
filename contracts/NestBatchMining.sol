@@ -6,7 +6,6 @@ import "./libs/IERC20.sol";
 import "./libs/TransferHelper.sol";
 
 import "./interfaces/INestBatchMining.sol";
-import "./interfaces/INestLedger.sol";
 
 import "./custom/ChainConfig.sol";
 import "./custom/NestFrequentlyUsed.sol";
@@ -749,17 +748,6 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         channel.rewards -= _toUInt96(value);
         // pay
         payable(to).transfer(value);
-    }
-
-    /// @dev Donate to dao
-    /// @param channelId Target channelId
-    /// @param value Amount to receive
-    function donate(uint channelId, uint value) external override {
-
-        PriceChannel storage channel = _channels[channelId];
-        require(channel.opener == msg.sender, "NOM:!opener");
-        channel.rewards -= _toUInt96(value);
-        INestLedger(INestMapping(_governance).getNestLedgerAddress()).addETHReward { value: value } (channelId);
     }
 
     /// @dev Gets the address corresponding to the given index number

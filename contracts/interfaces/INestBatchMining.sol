@@ -246,9 +246,4 @@ interface INestBatchMining {
     /// @param to Address to receive
     /// @param value Amount to receive
     function pay(uint channelId, address to, uint value) external;
-
-    /// @dev Donate to dao
-    /// @param channelId Target channelId
-    /// @param value Amount to receive
-    function donate(uint channelId, uint value) external;
 }

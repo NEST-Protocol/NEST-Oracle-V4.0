@@ -2,9 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-import "./libs/TransferHelper.sol";
 import "./interfaces/INestGovernance.sol";
-import "./interfaces/INestLedger.sol";
 
 /// @dev Base contract of nest
 contract NestBase {
