@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.6;
 
-import "./libs/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "./libs/TransferHelper.sol";
 
 import "./interfaces/INestBatchMining.sol";
@@ -10,7 +11,7 @@ import "./interfaces/INestBatchMining.sol";
 import "./custom/ChainConfig.sol";
 import "./custom/NestFrequentlyUsed.sol";
 
-/// @dev This contract implemented the mining logic of nest
+/// @dev This contract implemented the mining logic of nest4
 contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
 
     /// @dev To support open-zeppelin/upgrades
@@ -181,7 +182,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         ChannelConfig calldata config
     ) external override {
 
-        require(unit > 0, "NOM:unit must > 0");
+        require(uint(unit) > 0, "NOM:unit must > 0");
 
         // Emit open event
         emit Open(_channels.length, token0, unit, reward);

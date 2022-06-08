@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 
 import "../NestBase.sol";
 
-// /// @dev Base contract of nest
+// /// @dev This contract include frequently used data
 // contract NestFrequentlyUsed is NestBase {
 
 //     // Address of nest token contract
@@ -31,7 +31,7 @@ import "../NestBase.sol";
 import "../interfaces/INestGovernance.sol";
 
 // TODO: Use constant version
-/// @dev Base contract of nest
+/// @dev This contract include frequently used data
 contract NestFrequentlyUsed is NestBase {
 
     // Address of nest token contract

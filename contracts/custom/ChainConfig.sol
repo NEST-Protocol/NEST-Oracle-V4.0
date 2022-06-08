@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-/// @dev Base contract of nest
+/// @dev Specific data for target chain
 contract ChainConfig {
 
     // ******** Ethereum ******** //
