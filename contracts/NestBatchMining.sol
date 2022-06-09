@@ -33,14 +33,14 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         // The block number of this price sheet packaged
         uint32 height;
 
-        // The remain number of this price sheet
-        uint32 remainNum;
+        // The remained scales of this sheet, this value reduced by take
+        uint32 remainScales;
 
-        // The eth number which miner will got
-        uint32 ethNumBal;
+        // The scales of token0 left in this sheet
+        uint32 token0Scales;
 
-        // The eth number which equivalent to token's value which miner will got
-        uint32 tokenNumBal;
+        // The scales of token1 left in this sheet
+        uint32 token1Scales;
 
         // The pledged number of nest in this sheet. (Unit: 1000nest)
         uint24 nestNum1k;
@@ -66,7 +66,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         uint32 height;
 
         // The remain number of this price sheet
-        uint32 remainNum;
+        uint32 remainScales;
 
         // Price, represent as float
         // Represent price as this way, may lose precision, the error less than 1/10^14
@@ -412,7 +412,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
     }
 
     /// @notice Call the function to buy TOKEN/NTOKEN from a posted price sheet
-    /// @dev bite TOKEN(NTOKEN) by ETH,  (+ethNumBal, -tokenNumBal)
+    /// @dev bite TOKEN(NTOKEN) by ETH,  (+token0Scales, -token1Scales)
     /// @param channelId Target price channelId
     /// @param pairIndex Target pairIndex. When take token0, use pairIndex direct, or add 65536 conversely
     /// @param index The position of the sheet in priceSheetList[token]
@@ -439,12 +439,12 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
 
         // 3. Check state
         require(uint(sheet.height) + uint(config.priceEffectSpan) >= block.number, "NM:!state");
-        sheet.remainNum = uint32(uint(sheet.remainNum) - takeNum);
+        sheet.remainScales = uint32(uint(sheet.remainScales) - takeNum);
 
         uint accountIndex = _addressIndex(msg.sender);
         // Number of nest to be pledged
-        // sheet.ethNumBal + sheet.tokenNumBal is always two times to sheet.ethNum
-        uint needNest1k = (takeNum << 2) * uint(sheet.nestNum1k) / (uint(sheet.ethNumBal) + uint(sheet.tokenNumBal));
+        // sheet.token0Scales + sheet.token1Scales is always two times to sheet.ethNum
+        uint needNest1k = (takeNum << 2) * uint(sheet.nestNum1k) / (uint(sheet.token0Scales) + uint(sheet.token1Scales));
 
         // 4. Calculate the number of eth, token and nest needed, and freeze them
         uint needEthNum = takeNum;
@@ -467,8 +467,8 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             // pairIndex < 0x10000 means take token0
             if (pairIndex < 0x10000) {
                 // Update the bitten sheet
-                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) - takeNum);
-                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) + takeNum);
+                sheet.token0Scales = uint32(uint(sheet.token0Scales) - takeNum);
+                sheet.token1Scales = uint32(uint(sheet.token1Scales) + takeNum);
                 pair.sheets[index] = sheet;
 
                 // Freeze token0
@@ -485,8 +485,8 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             else {
                 pairIndex -= 0x10000;
                 // Update the bitten sheet
-                sheet.ethNumBal = uint32(uint(sheet.ethNumBal) + takeNum);
-                sheet.tokenNumBal = uint32(uint(sheet.tokenNumBal) - takeNum);
+                sheet.token0Scales = uint32(uint(sheet.token0Scales) + takeNum);
+                sheet.token1Scales = uint32(uint(sheet.token1Scales) - takeNum);
                 pair.sheets[index] = sheet;
 
                 // Freeze token0
@@ -636,13 +636,13 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                     }
 
                     nestNum1k += uint(sheet.nestNum1k);
-                    ethNum += uint(sheet.ethNumBal);
-                    tokenValue += _decodeFloat(sheet.priceFloat) * uint(sheet.tokenNumBal);
+                    ethNum += uint(sheet.token0Scales);
+                    tokenValue += _decodeFloat(sheet.priceFloat) * uint(sheet.token1Scales);
 
                     // Set sheet.miner to 0, express the sheet is closed
                     sheet.miner = uint32(0);
-                    sheet.ethNumBal = uint32(0);
-                    sheet.tokenNumBal = uint32(0);
+                    sheet.token0Scales = uint32(0);
+                    sheet.token1Scales = uint32(0);
                     pair.sheets[index] = sheet;
                 }
 
@@ -782,11 +782,11 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             // The block number of this price sheet packaged
             sheet.height,
             // The remain number of this price sheet
-            sheet.remainNum,
+            sheet.remainScales,
             // The eth number which miner will got
-            sheet.ethNumBal,
+            sheet.token0Scales,
             // The eth number which equivalent to token's value which miner will got
-            sheet.tokenNumBal,
+            sheet.token1Scales,
             // The pledged number of nest in this sheet. (Unit: 1000nest)
             sheet.nestNum1k,
             // The level of this sheet. 0 expresses initial price sheet, a value greater than 0 expresses 
@@ -812,9 +812,9 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         sheets.push(PriceSheet(
             uint32(accountIndex),                       // uint32 miner;
             uint32(block.number),                       // uint32 height;
-            ethNum,                                     // uint32 remainNum;
-            ethNum,                                     // uint32 ethNumBal;
-            ethNum,                                     // uint32 tokenNumBal;
+            ethNum,                                     // uint32 remainScales;
+            ethNum,                                     // uint32 token0Scales;
+            ethNum,                                     // uint32 token1Scales;
             uint24(nestNum1k),                          // uint32 nestNum1k;
             uint8(level_shares >> 8),                   // uint8 level;
             uint8(level_shares & 0xFF),
@@ -875,7 +875,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                     // New price
                     uint price = totalTokenValue / totalEthNum;
                     // Update price
-                    p0.remainNum = uint32(totalEthNum);
+                    p0.remainScales = uint32(totalEthNum);
                     p0.priceFloat = _encodeFloat(price);
                     // Clear cumulative values
                     totalEthNum = 0;
@@ -935,8 +935,8 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             }
 
             // Cumulative price information
-            totalEthNum += uint(sheet.remainNum);
-            totalTokenValue += _decodeFloat(sheet.priceFloat) * uint(sheet.remainNum);
+            totalEthNum += uint(sheet.remainScales);
+            totalTokenValue += _decodeFloat(sheet.priceFloat) * uint(sheet.remainScales);
         }
 
         // Update price information
@@ -1102,7 +1102,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
 
         PriceInfo memory priceInfo = pair.price;
 
-        if (uint(priceInfo.remainNum) > 0) {
+        if (uint(priceInfo.remainScales) > 0) {
             return (uint(priceInfo.height) + uint(_config.priceEffectSpan), _decodeFloat(priceInfo.priceFloat));
         }
         
@@ -1126,7 +1126,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
 
         PriceInfo memory priceInfo = pair.price;
 
-        if (uint(priceInfo.remainNum) > 0) {
+        if (uint(priceInfo.remainScales) > 0) {
             return (
                 uint(priceInfo.height) + uint(_config.priceEffectSpan),
                 _decodeFloat(priceInfo.priceFloat),
@@ -1181,7 +1181,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         uint totalEthNum = 0;
         uint totalTokenValue = 0;
         uint h = 0;
-        uint remainNum;
+        uint remainScales;
         PriceSheet memory sheet;
 
         // Find sheets forward
@@ -1192,15 +1192,15 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             if (height < sheetHeight) {
                 break;
             }
-            remainNum = uint(sheet.remainNum);
-            if (remainNum > 0) {
+            remainScales = uint(sheet.remainScales);
+            if (remainScales > 0) {
                 if (h == 0) {
                     h = sheetHeight;
                 } else if (h != sheetHeight) {
                     break;
                 }
-                totalEthNum += remainNum;
-                totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
+                totalEthNum += remainScales;
+                totalTokenValue += _decodeFloat(sheet.priceFloat) * remainScales;
             }
         }
 
@@ -1208,16 +1208,16 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         while (index > 0) {
 
             sheet = sheets[--index];
-            remainNum = uint(sheet.remainNum);
-            if (remainNum > 0) {
+            remainScales = uint(sheet.remainScales);
+            if (remainScales > 0) {
                 sheetHeight = uint(sheet.height);
                 if (h == 0) {
                     h = sheetHeight;
                 } else if (h != sheetHeight) {
                     break;
                 }
-                totalEthNum += remainNum;
-                totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
+                totalEthNum += remainScales;
+                totalTokenValue += _decodeFloat(sheet.priceFloat) * remainScales;
             }
         }
 
@@ -1259,9 +1259,9 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                 height = uint(sheet.height);
             }
 
-            uint remainNum = uint(sheet.remainNum);
-            totalEthNum += remainNum;
-            totalTokenValue += _decodeFloat(sheet.priceFloat) * remainNum;
+            uint remainScales = uint(sheet.remainScales);
+            totalEthNum += remainScales;
+            totalTokenValue += _decodeFloat(sheet.priceFloat) * remainScales;
         }
 
         return array;

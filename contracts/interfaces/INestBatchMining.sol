@@ -48,14 +48,14 @@ interface INestBatchMining {
         // The block number of this price sheet packaged
         uint32 height;
 
-        // The remain number of this price sheet
-        uint32 remainNum;
+        // The remained scales of this sheet, this value reduced by take
+        uint32 remainScales;
 
-        // The eth number which miner will got
-        uint32 ethNumBal;
+        // The scales of token0 left in this sheet
+        uint32 token0Scales;
 
-        // The eth number which equivalent to token's value which miner will got
-        uint32 tokenNumBal;
+        // The scales of token1 left in this sheet
+        uint32 token1Scales;
 
         // The pledged number of nest in this sheet. (Unit: 1000nest)
         uint24 nestNum1k;
