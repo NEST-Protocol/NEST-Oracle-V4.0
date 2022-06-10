@@ -496,7 +496,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                 if (needEthNum * newEquivalent > backTokenValue) {
                     fee = _freeze(balances, pair.target, needEthNum * newEquivalent - backTokenValue, fee);
                 } else {
-                    _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, msg.sender);
+                    _unfreeze(balances, pair.target, backTokenValue - needEthNum * newEquivalent, accountIndex);
                 }
             }
                 
@@ -1019,21 +1019,6 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         if (tokenValue > 0) {
             if (tokenAddress == address(0)) {
                 payable(indexAddress(accountIndex)).transfer(tokenValue);
-            } else {
-                balances[tokenAddress].value += tokenValue;
-            }
-        }
-    }
-
-    function _unfreeze(
-        mapping(address=>UINT) storage balances, 
-        address tokenAddress, 
-        uint tokenValue,
-        address owner
-    ) private {
-        if (tokenValue > 0) {
-            if (tokenAddress == address(0)) {
-                payable(owner).transfer(tokenValue);
             } else {
                 balances[tokenAddress].value += tokenValue;
             }
