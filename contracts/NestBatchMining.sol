@@ -1010,6 +1010,11 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         }
     }
 
+    /// @dev unfreeze token
+    /// @param balances Balances ledger
+    /// @param tokenAddress Destination token address
+    /// @param tokenValue token amount
+    /// @param accountIndex target accountIndex
     function _unfreeze(
         mapping(address=>UINT) storage balances, 
         address tokenAddress, 
