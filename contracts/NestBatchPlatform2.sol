@@ -236,6 +236,8 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
             require(msg.value == fee, "NOP:!fee");
         }
 
-        channel.rewards += _toUInt96(fee);
+        if (fee > 0) {
+            channel.rewards += _toUInt96(fee);
+        }
     }
 }

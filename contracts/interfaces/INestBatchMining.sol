@@ -237,10 +237,6 @@ interface INestBatchMining {
         uint index
     ) external view returns (uint minedBlocks, uint totalShares);
 
-    /// @dev The function returns eth rewards of specified ntoken
-    /// @param channelId Target channelId
-    function totalETHRewards(uint channelId) external view returns (uint);
-
     /// @dev Pay
     /// @param channelId Target channelId
     /// @param to Address to receive

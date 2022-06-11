@@ -622,9 +622,6 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                             // Currently, mined represents the number of blocks has mined
                             (uint mined, uint totalShares) = _calcMinedBlocks(pair.sheets, index, sheet);
                             
-                            // When rewardPerBlock is very large, this calculated may be truncated, 
-                            // resulting in a significant reduction in the actual reward,
-                            // This situation is unreasonable and needs to be borne by the opener.
                             reward += (
                                 mined
                                 * shares
@@ -667,7 +664,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             reward = vault;
         }
         // Record the vault for each channel to prevent the opener use the funds in this contract without increase
-        channel.vault = uint96(vault - reward);
+        channel.vault = uint128(vault - reward);
         
         // Record reward
         _unfreeze(balances, channel.reward, reward, accountIndex);
@@ -730,12 +727,6 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
     ) external view override returns (uint minedBlocks, uint totalShares) {
         PriceSheet[] storage sheets = _channels[channelId].pairs[0].sheets;
         return _calcMinedBlocks(sheets, index, sheets[index]);
-    }
-
-    /// @dev The function returns eth rewards of specified ntoken
-    /// @param channelId Target channelId
-    function totalETHRewards(uint channelId) external view override returns (uint) {
-        return uint(_channels[channelId].rewards);
     }
 
     /// @dev Pay
@@ -837,9 +828,9 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         uint prev = uint(p0.height);
         // It's not necessary to load the price information in p0
         // Eth count variable used to calculate price
-        uint totalEthNum = 0; 
+        uint totalToken0Scales = 0; 
         // Token count variable for price calculation
-        uint totalTokenValue = 0; 
+        uint totalToken1Value = 0; 
         // Block number of current sheet
         uint height = 0;
 
@@ -866,20 +857,20 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             // Not the same block (or flag is false), calculate the price and update it
             if (flag || prev != height) {
 
-                // totalEthNum > 0 Can calculate the price
-                if (totalEthNum > 0) {
+                // totalToken0Scales > 0 Can calculate the price
+                if (totalToken0Scales > 0) {
 
                     // Calculate average price and Volatility
                     // Calculation method of volatility of follow-up price
                     uint tmp = _decodeFloat(p0.priceFloat);
                     // New price
-                    uint price = totalTokenValue / totalEthNum;
+                    uint price = totalToken1Value / totalToken0Scales;
                     // Update price
-                    p0.remainScales = uint32(totalEthNum);
+                    p0.remainScales = uint32(totalToken0Scales);
                     p0.priceFloat = _encodeFloat(price);
                     // Clear cumulative values
-                    totalEthNum = 0;
-                    totalTokenValue = 0;
+                    totalToken0Scales = 0;
+                    totalToken1Value = 0;
 
                     if (tmp > 0) {
                         // Calculate average price
@@ -935,8 +926,8 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             }
 
             // Cumulative price information
-            totalEthNum += uint(sheet.remainScales);
-            totalTokenValue += _decodeFloat(sheet.priceFloat) * uint(sheet.remainScales);
+            totalToken0Scales += uint(sheet.remainScales);
+            totalToken1Value += _decodeFloat(sheet.priceFloat) * uint(sheet.remainScales);
         }
 
         // Update price information
@@ -1168,8 +1159,8 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         }
 
         // Calculate price
-        uint totalEthNum = 0;
-        uint totalTokenValue = 0;
+        uint totalToken0Scales = 0;
+        uint totalToken1Value = 0;
         uint h = 0;
         uint remainScales;
         PriceSheet memory sheet;
@@ -1189,8 +1180,8 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                 } else if (h != sheetHeight) {
                     break;
                 }
-                totalEthNum += remainScales;
-                totalTokenValue += _decodeFloat(sheet.priceFloat) * remainScales;
+                totalToken0Scales += remainScales;
+                totalToken1Value += _decodeFloat(sheet.priceFloat) * remainScales;
             }
         }
 
@@ -1206,13 +1197,13 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                 } else if (h != sheetHeight) {
                     break;
                 }
-                totalEthNum += remainScales;
-                totalTokenValue += _decodeFloat(sheet.priceFloat) * remainScales;
+                totalToken0Scales += remainScales;
+                totalToken1Value += _decodeFloat(sheet.priceFloat) * remainScales;
             }
         }
 
-        if (totalEthNum > 0) {
-            return (h + priceEffectSpan, totalTokenValue / totalEthNum);
+        if (totalToken0Scales > 0) {
+            return (h + priceEffectSpan, totalToken1Value / totalToken0Scales);
         }
         return (0, 0);
     }
@@ -1229,29 +1220,29 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
 
         uint priceEffectSpan = uint(_config.priceEffectSpan);
         uint index = sheets.length;
-        uint totalEthNum = 0;
-        uint totalTokenValue = 0;
+        uint totalToken0Scales = 0;
+        uint totalToken1Value = 0;
         uint height = 0;
 
         for (uint i = 0; i < count;) {
 
             bool flag = index == 0;
             if (flag || height != uint((sheet = sheets[--index]).height)) {
-                if (totalEthNum > 0 && height + priceEffectSpan < block.number) {
+                if (totalToken0Scales > 0 && height + priceEffectSpan < block.number) {
                     array[i++] = height + priceEffectSpan;
-                    array[i++] = totalTokenValue / totalEthNum;
+                    array[i++] = totalToken1Value / totalToken0Scales;
                 }
                 if (flag) {
                     break;
                 }
-                totalEthNum = 0;
-                totalTokenValue = 0;
+                totalToken0Scales = 0;
+                totalToken1Value = 0;
                 height = uint(sheet.height);
             }
 
             uint remainScales = uint(sheet.remainScales);
-            totalEthNum += remainScales;
-            totalTokenValue += _decodeFloat(sheet.priceFloat) * remainScales;
+            totalToken0Scales += remainScales;
+            totalToken1Value += _decodeFloat(sheet.priceFloat) * remainScales;
         }
 
         return array;
