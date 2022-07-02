@@ -364,8 +364,8 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
 
         // Freeze token and nest
         // Because of the use of floating-point representation(fraction * 16 ^ exponent), it may bring some precision 
-        // loss After assets are frozen according to tokenAmountPerEth * ethNum, the part with poor accuracy may be 
-        // lost when the assets are returned, It should be frozen according to decodeFloat(fraction, exponent) * ethNum
+        // loss After assets are frozen according to equivalent * scale, the part with poor accuracy may be 
+        // lost when the assets are returned, It should be frozen according to decodeFloat(fraction, exponent) * scale
         // However, considering that the loss is less than 1 / 10 ^ 14, the loss here is ignored, and the part of
         // precision loss can be transferred out as system income in the future
         mapping(address=>UINT) storage balances = _accounts[accountIndex].balances;
@@ -441,7 +441,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
 
         uint accountIndex = _addressIndex(msg.sender);
         // Number of nest to be pledged
-        // sheet.token0Scales + sheet.token1Scales is always two times to sheet.ethNum
+        // sheet.token0Scales + sheet.token1Scales is always two times to sheet.scale (a virtual variable)
         uint needNest1k = (takeNum << 2) * uint(sheet.nestNum1k) / (uint(sheet.token0Scales) + uint(sheet.token1Scales));
 
         // 4. Calculate the number of eth, token and nest needed, and freeze them
@@ -572,7 +572,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         uint accountIndex = 0;
         uint reward = 0;
         uint nestNum1k = 0;
-        uint ethNum = 0;
+        uint token0Scales = 0;
 
         // storage variable must given a value at declaring, this is useless
         mapping(address=>UINT) storage balances = _accounts[0/*accountIndex*/].balances;
@@ -631,7 +631,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
                     }
 
                     nestNum1k += uint(sheet.nestNum1k);
-                    ethNum += uint(sheet.token0Scales);
+                    token0Scales += uint(sheet.token0Scales);
                     tokenValue += _decodeFloat(sheet.priceFloat) * uint(sheet.token1Scales);
 
                     // Set sheet.miner to 0, express the sheet is closed
@@ -652,7 +652,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         }
 
         // Unfreeze token0
-        _unfreeze(balances, channel.token0, ethNum * uint(channel.unit), accountIndex);
+        _unfreeze(balances, channel.token0, token0Scales * uint(channel.unit), accountIndex);
         
         // Unfreeze nest
         _unfreeze(balances, NEST_TOKEN_ADDRESS, nestNum1k * 1000 ether, accountIndex);
@@ -792,7 +792,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
     function _create(
         PriceSheet[] storage sheets,
         uint accountIndex,
-        uint32 ethNum,
+        uint32 scale,
         uint nestNum1k,
         uint level_shares,
         uint equivalent
@@ -801,9 +801,9 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         sheets.push(PriceSheet(
             uint32(accountIndex),                       // uint32 miner;
             uint32(block.number),                       // uint32 height;
-            ethNum,                                     // uint32 remainScales;
-            ethNum,                                     // uint32 token0Scales;
-            ethNum,                                     // uint32 token1Scales;
+            scale,                                     // uint32 remainScales;
+            scale,                                     // uint32 token0Scales;
+            scale,                                     // uint32 token1Scales;
             uint24(nestNum1k),                          // uint32 nestNum1k;
             uint8(level_shares >> 8),                   // uint8 level;
             uint8(level_shares & 0xFF),
@@ -1067,7 +1067,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
 
     // Convert uint to uint96
     function _toUInt96(uint value) internal pure returns (uint96) {
-        require(value < 0x1000000000000000000000000);
+        require(value < 0x1000000000000000000000000, "NBM:can't convert to uint96");
         return uint96(value);
     }
 
