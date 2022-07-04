@@ -801,9 +801,9 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         sheets.push(PriceSheet(
             uint32(accountIndex),                       // uint32 miner;
             uint32(block.number),                       // uint32 height;
-            scale,                                     // uint32 remainScales;
-            scale,                                     // uint32 token0Scales;
-            scale,                                     // uint32 token1Scales;
+            scale,                                      // uint32 remainScales;
+            scale,                                      // uint32 token0Scales;
+            scale,                                      // uint32 token1Scales;
             uint24(nestNum1k),                          // uint32 nestNum1k;
             uint8(level_shares >> 8),                   // uint8 level;
             uint8(level_shares & 0xFF),
