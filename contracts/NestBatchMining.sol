@@ -852,7 +852,7 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             bool flag = index >= length
                 || (height = uint((sheet = sheets[index]).height)) + uint(config.priceEffectSpan) >= block.number;
 
-            // Not the same block (or flag is false), calculate the price and update it
+            // Not the same block (or flag is true), calculate the price and update it
             if (flag || prev != height) {
 
                 // totalToken0Scales > 0 Can calculate the price
