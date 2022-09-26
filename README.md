@@ -1,10 +1,9 @@
 # NEST-Oracle-V4.0
 The NEST Oracle Smart Contract 4.0 is a solidity smart contract implementation of NEST Protocol which provide a unique on-chain Price Oracle through a decentralized mechanism.
 
-![](https://img.shields.io/github/issues/NEST-Protocol/NEST-Oracle-V3.6)
-![](https://img.shields.io/github/stars/NEST-Protocol/NEST-Oracle-V3.6)
-![](https://img.shields.io/github/license/NEST-Protocol/NEST-Oracle-V3.6)
-![](https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2FNEST-Protocol%2FNEST-Oracle-V3.6%2F)
+![](https://img.shields.io/github/issues/NEST-Protocol/NEST-Oracle-V4.0)
+![](https://img.shields.io/github/stars/NEST-Protocol/NEST-Oracle-V4.0)
+![](https://img.shields.io/github/license/NEST-Protocol/NEST-Oracle-V4.0)
 
 ## Whitepaper
 
@@ -12,13 +11,11 @@ The NEST Oracle Smart Contract 4.0 is a solidity smart contract implementation o
 
 ## Documents
 
-**[NEST V3.6 Contract Specification](docs/readme.md)**
+**[About NEST](https://nestprotocol.org/docs/Concept/What-is-NEST)**
 
-**[NEST V3.6 Contract Structure Diagram](docs/nest36-contracts.svg)**
+**[How does NEST Oracle Work?](https://nestprotocol.org/docs/NEST-Oracle/How-does-NEST-Oracle-Work)**
 
-**[NEST V3.6 Application Scenarios](docs/readme.md#5-application-scenarios)**
-
-**[Audit Report](docs/PeckShield-Audit-Report-NestV3.6.pdf)**
+**[Audit Report](https://github.com/NEST-Protocol/NEST-Docs/blob/main/REP-NEST-Protocol4__final-20220715T020738Z.pdf)**
 
 **[Learn More...](https://nestprotocol.org/)**
 

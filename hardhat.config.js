@@ -36,6 +36,13 @@ module.exports = {
       gasPrice: 25e9,
       timeout: 2000000000
     },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${config.infura.key}`,
+      accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
+      gas: 6e6,
+      initialBaseFeePerGas: 1e6,
+      timeout: 2000000000
+    },
     ropsten: {
       url: `${config.infura.ropsten.url}`,
       accounts: [config.account.ropsten.key, config.account.ropsten.userA, config.account.ropsten.userB],
