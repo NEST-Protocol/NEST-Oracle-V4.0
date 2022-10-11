@@ -12,15 +12,6 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
 
     /* ========== INestBatchPriceView ========== */
 
-    /// @dev Get the latest trigger price
-    /// @param channelId Target channelId
-    /// @param pairIndex Target pairIndex
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    function triggeredPrice(uint channelId, uint pairIndex) external view override noContract returns (uint blockNumber, uint price) {
-        return _triggeredPrice(_channels[channelId].pairs[pairIndex]);
-    }
-
     /// @dev Get the full information of latest trigger price
     /// @param channelId Target channelId
     /// @param pairIndex Target pairIndex
@@ -62,57 +53,7 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
         return _lastPriceList(_channels[channelId].pairs[pairIndex], count);
     } 
 
-    /// @dev Returns lastPriceList and triggered price info
-    /// @param channelId Target channelId
-    /// @param pairIndex Target pairIndex
-    /// @param count The number of prices that want to return
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
-    /// @return triggeredPriceBlockNumber The block number of triggered price
-    /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    /// @return triggeredAvgPrice Average price
-    /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    function lastPriceListAndTriggeredPriceInfo(uint channelId, uint pairIndex, uint count) external view override noContract
-    returns (
-        uint[] memory prices,
-        uint triggeredPriceBlockNumber,
-        uint triggeredPriceValue,
-        uint triggeredAvgPrice,
-        uint triggeredSigmaSQ
-    ) {
-        //return _lastPriceListAndTriggeredPriceInfo(_channels[channelId].pairs[pairIndex], count);
-        PricePair storage pair = _channels[channelId].pairs[pairIndex];
-        prices = _lastPriceList(pair, count);
-        (
-            triggeredPriceBlockNumber, 
-            triggeredPriceValue, 
-            triggeredAvgPrice, 
-            triggeredSigmaSQ
-        ) = _triggeredPriceInfo(pair);
-    }
-
     /* ========== INestBatchPrice ========== */
-
-    /// @dev Get the latest trigger price
-    /// @param channelId Target channelId
-    /// @param pairIndices Array of pair indices
-    /// @param payback Address to receive refund
-    /// @return prices Price array, i * 2 is the block where the ith price is located, and i * 2 + 1 is the ith price
-    function triggeredPrice(
-        uint channelId,
-        uint[] calldata pairIndices, 
-        address payback
-    ) external payable override returns (uint[] memory prices) {
-        PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
-
-        uint n = pairIndices.length << 1;
-        prices = new uint[](n);
-        while (n > 0) {
-            n -= 2;
-            (prices[n], prices[n + 1]) = _triggeredPrice(pairs[pairIndices[n >> 1]]);
-        }
-    }
 
     /// @dev Get the full information of latest trigger price
     /// @param channelId Target channelId
@@ -184,58 +125,14 @@ contract NestBatchPlatform2 is NestBatchMining, INestBatchPriceView, INestBatchP
         }
     }
 
-    /// @dev Returns lastPriceList and triggered price info
-    /// @param channelId Target channelId
-    /// @param pairIndices Array of pair indices
-    /// @param count The number of prices that want to return
-    /// @param payback Address to receive refund
-    /// @return prices result of group i quotation pair. Among them, the first two count * are the latest prices, 
-    /// and the last four are: trigger price block number, trigger price, average price and volatility
-    function lastPriceListAndTriggeredPriceInfo(
-        uint channelId, 
-        uint[] calldata pairIndices,
-        uint count, 
-        address payback
-    ) external payable override returns (uint[] memory prices) {
-        PricePair[0xFFFF] storage pairs = _pay(channelId, payback).pairs;
-
-        uint row = (count << 1) + 4;
-        uint n = pairIndices.length * row;
-        prices = new uint[](n);
-        while (n > 0) {
-            n -= row;
-
-            PricePair storage pair = pairs[pairIndices[n / row]];
-            uint[] memory pi = _lastPriceList(pair, count);
-            for (uint i = 0; i + 4 < row; ++i) {
-                prices[n + i] = pi[i];
-            }
-            uint j = n + row - 4;
-            (
-                prices[j],
-                prices[j + 1],
-                prices[j + 2],
-                prices[j + 3]
-            ) = _triggeredPriceInfo(pair);
-        }
-    }
-
     // Payment of transfer fee
     function _pay(uint channelId, address payback) private returns (PriceChannel storage channel) {
-
         channel = _channels[channelId];
-        uint fee = uint(channel.singleFee) * DIMI_ETHER;
-        if (msg.value > fee) {
-            payable(payback).transfer(msg.value - fee);
+        if (msg.value > 0) {
+            payable(payback).transfer(msg.value);
             // BSC adopts the old gas calculation strategy. Direct transfer may lead to the excess of gas 
             // in the agency contract. The following methods should be used for transfer
             //TransferHelper.safeTransferETH(payback, msg.value - fee);
-        } else {
-            require(msg.value == fee, "NOP:!fee");
-        }
-
-        if (fee > 0) {
-            channel.rewards += _toUInt96(fee);
         }
     }
 }

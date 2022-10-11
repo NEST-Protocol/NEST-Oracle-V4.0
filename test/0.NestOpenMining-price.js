@@ -182,9 +182,9 @@ describe('NestOpenMining', function() {
                 });
 
                 await np.lastPriceList(0, [0], 1, owner.address, { value: toBigInt(FEE) });
-                await np.triggeredPrice(0, [0], owner.address, { value: toBigInt(FEE) });
+                //await np.triggeredPrice(0, [0], owner.address, { value: toBigInt(FEE) });
                 //await np.latestPriceAndTriggeredPriceInfo(0, 0, owner.address, { value: toBigInt(FEE) });
-                await np.lastPriceListAndTriggeredPriceInfo(0, [0], 2, owner.address, { value: toBigInt(FEE) });
+                //await np.lastPriceListAndTriggeredPriceInfo(0, [0], 2, owner.address, { value: toBigInt(FEE) });
                 await np.lastPriceList(0, [0], 2, owner.address, { value: toBigInt(FEE) });
                 await np.findPrice(0, [0], 85, owner.address, { value: toBigInt(FEE) });
             }

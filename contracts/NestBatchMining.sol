@@ -256,6 +256,25 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         ++channel.count;
     }
 
+    /// @dev Modify token Address
+    /// @param channelId Target channelId
+    /// @param tokenIndex Which token to be update, 65536 means token0, 65537 means reward, else means pairs[tokenIndex]
+    /// @param tokenAddress New token address
+    function modifyToken(
+        uint channelId, 
+        uint tokenIndex,
+        address tokenAddress
+    ) external onlyGovernance {
+        PriceChannel storage channel = _channels[channelId];
+        if (tokenIndex == 65536) {
+            channel.token0 = tokenAddress;
+        } else if (tokenIndex == 65537) {
+            channel.reward = tokenAddress;
+        } else {
+            channel.pairs[tokenIndex].target = tokenAddress;
+        }
+    }
+
     /// @dev Increase vault to channel
     /// @param channelId Target channelId
     /// @param vault Total to increase
@@ -377,14 +396,14 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         fee = _freeze(balances, NEST_TOKEN_ADDRESS, cn * uint(config.pledgeNest) * 1000 ether, fee);
     
         // Freeze token0
-        fee = _freeze(balances, channel.token0, cn * uint(channel.unit) * scale, fee);
+        fee = _freeze(balances, channel.token0, cn * uint(channel.unit), fee);
 
         // Freeze token1
         while (cn > 0) {
             PricePair storage pair = channel.pairs[--cn];
             uint equivalent = equivalents[cn];
             require(equivalent > 0, "NOM:!equivalent");
-            fee = _freeze(balances, pair.target, scale * equivalent, fee);
+            fee = _freeze(balances, pair.target, equivalent, fee);
 
             // Calculate the price
             // According to the current mechanism, the newly added sheet cannot take effect, so the calculated price
@@ -392,9 +411,9 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
             _stat(config, pair);
             
             // 6. Create token price sheet
-            emit Post(channelId, cn, msg.sender, pair.sheets.length, scale, equivalent);
+            emit Post(channelId, cn, msg.sender, pair.sheets.length, 1, equivalent);
             // Only pairIndex 0 has reward
-            _create(pair.sheets, accountIndex, uint32(scale), uint(config.pledgeNest), cn == 0 ? 1 : 0, equivalent);
+            _create(pair.sheets, accountIndex, uint32(1), uint(config.pledgeNest), cn == 0 ? 1 : 0, equivalent);
         }
 
         // Remove post fee logic, and reserve postFeeUnit field
@@ -797,7 +816,6 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
         uint level_shares,
         uint equivalent
     ) private {
-
         sheets.push(PriceSheet(
             uint32(accountIndex),                       // uint32 miner;
             uint32(block.number),                       // uint32 height;
@@ -1073,21 +1091,6 @@ contract NestBatchMining is ChainConfig, NestFrequentlyUsed, INestBatchMining {
 
     /* ========== Price Query ========== */
     
-    /// @dev Get the latest trigger price
-    /// @param pair Target price pair
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    function _triggeredPrice(PricePair storage pair) internal view returns (uint blockNumber, uint price) {
-
-        PriceInfo memory priceInfo = pair.price;
-
-        if (uint(priceInfo.remainScales) > 0) {
-            return (uint(priceInfo.height) + uint(_config.priceEffectSpan), _decodeFloat(priceInfo.priceFloat));
-        }
-        
-        return (0, 0);
-    }
-
     /// @dev Get the full information of latest trigger price
     /// @param pair Target price pair
     /// @return blockNumber The block number of price
