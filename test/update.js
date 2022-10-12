@@ -16,6 +16,7 @@ describe('update', function() {
             const ci = await nestBatchPlatform2.getChannelInfo(0);
             console.log(UI(ci));
 
+            // 0x0316EB71485b0Ab14103307bf65a021042c6d380
             // await nestBatchPlatform2.modifyToken(0, 0, '0x102E6BBb1eBfe2305Ee6B9E9fd5547d0d39CE3B4');
             // await nestBatchPlatform2.modify(0, {
             //     rewardPerBlock: 20000000000000000000n,
@@ -23,30 +24,14 @@ describe('update', function() {
             //     singleFee: 0,
             //     reductionRate: 8000
             // });
-
-            // // Price channel configuration
-            // struct ChannelConfig {
-
-            //     // Reward per block standard
-            //     uint96 rewardPerBlock;
-
-            //     // Post fee(0.0001eth, DIMI_ETHER). 1000
-            //     uint16 postFeeUnit;
-
-            //     // Single query fee (0.0001 ether, DIMI_ETHER). 100
-            //     uint16 singleFee;
-
-            //     // Reduction rate(10000 based). 8000
-            //     uint16 reductionRate;
-            // }
         }
         
-        {
-            const config = await nestBatchPlatform2.getConfig();
-            console.log(UI(config));
+        // {
+        //     const config = await nestBatchPlatform2.getConfig();
+        //     console.log(UI(config));
 
-            const ci = await nestBatchPlatform2.getChannelInfo(0);
-            console.log(UI(ci));
-        }
+        //     const ci = await nestBatchPlatform2.getChannelInfo(0);
+        //     console.log(UI(ci));
+        // }
     });
 });
