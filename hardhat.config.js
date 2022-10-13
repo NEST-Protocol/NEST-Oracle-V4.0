@@ -31,9 +31,9 @@ module.exports = {
   },
   networks: {
     mainnet: {
-      url: `${config.infura.mainnet.url}`,
+      url: `https://eth-mainnet.alchemyapi.io/v2/${config.alchemy.key}`,
       accounts: [config.account.mainnet.key, config.account.mainnet.userA, config.account.mainnet.userB],
-      gasPrice: 25e9,
+      gasPrice: 12e9,
       timeout: 2000000000
     },
     goerli: {

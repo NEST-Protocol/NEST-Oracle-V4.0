@@ -11,6 +11,7 @@ exports.deploy = async function() {
     const TestERC20 = await ethers.getContractFactory('TestERC20');
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestBatchPlatform2 = await ethers.getContractFactory('NestBatchPlatform2');
+    const NNIncome = await ethers.getContractFactory('NNIncome');
 
     console.log('** Deploy: mainnet@20221012.js **');
     /*
@@ -80,6 +81,9 @@ exports.deploy = async function() {
 
     // const newNestBatchPlatform2 = await NestBatchPlatform2.deploy({ nonce: 53});
     // console.log('newNestBatchPlatform2: ' + newNestBatchPlatform2.address);
+
+    // const newNNIncome = await NNIncome.deploy({ nonce: 57 });
+    // console.log('newNNIncome: ' + newNNIncome.address);
 
     console.log('---------- OK ----------');
     
