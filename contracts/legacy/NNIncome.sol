@@ -47,6 +47,21 @@ contract NNIncome is NestBase, INNIncome {
     // Personal ledger
     mapping(address=>uint) _infoMapping;
 
+    // Reward speed;
+    uint _rewardSpeed;
+
+    /// @dev Set reward speed
+    /// @param rewardSpeed New reward speed
+    function setRewardSpeed(uint rewardSpeed) external onlyGovernance {
+        _rewardSpeed = rewardSpeed;
+    }
+
+    /// @dev Get reward speed
+    /// @return Reward speed
+    function getRewardSpeed() external view returns (uint) {
+        return _rewardSpeed;
+    }
+
     //---------transaction---------
 
     /// @dev Nest node transfer settlement. This method is triggered during nest node transfer and must be called 
@@ -127,7 +142,7 @@ contract NNIncome is NestBase, INNIncome {
     /// @return Ore drawing increment
     function increment() public view override returns (uint) {
         //return _reduction(block.number - NEST_GENESIS_BLOCK) * (block.number - _blockCursor) * 15 ether / 100;
-        return _reduction(block.number - 13827379) * (block.number - _blockCursor) * 3.75 ether / 400;
+        return _reduction(block.number - 13827379) * (block.number - _blockCursor) * _rewardSpeed / 400;
     }
 
     /// @dev Query the current available nest
